@@ -1,0 +1,124 @@
+
+
+        .JR.INCH
+         INC H
+         LD A,H
+         AND 7
+         JNZ @..
+         LD A,L
+         ADD A,32
+         LD L,A
+         JC @..
+         LD A,H
+         SUB 8
+         LD H,A
+        ..
+
+        .JR.INCD
+         INC D
+         LD A,D
+         AND 7
+         JNZ @..
+         LD A,E
+         ADD A,32
+         LD E,A
+         JC @..
+         LD A,D
+         SUB 8
+         LD D,A
+        ..
+
+        .SCR.INCH
+         INC H
+         LD A,H
+         AND 7
+         RET NZ
+         LD A,L
+         ADD A,32
+         LD L,A
+         RET C
+         LD A,H
+         SUB 8
+         LD H,A
+         RET
+        ..
+
+        .SCR.INCD
+         INC D
+         LD A,D
+         AND 7
+         RET NZ
+         LD A,E
+         ADD A,32
+         LD E,A
+         RET C
+         LD A,D
+         SUB 8
+         LD D,A
+         RET
+        ..
+
+        .Exit.Basic.48û
+         DI
+         LD HL,10072
+         LD IY,23610
+         EXX
+         LD A,63
+         LD I,A
+         IM 1
+         LD SP,(23613)
+         LD A,16
+         OUT (253),A
+;         LD BC,32765
+;         OUT (C),A
+         RES 4,(IY+1)
+         CALL 81
+         CALL 7030
+         JMP 4867
+        ..
+
+        .Ay.WR ,
+         LD A,@.0
+         LD BC,65533
+         OUT (C),A
+         LD A,@.1
+         LD BC,49149
+         OUT (C),A
+        ..
+
+        .Ay.ShutUpû
+         LD DE,16
+@1
+         DEC E
+         Ay.WR E,D
+         JNZ @1
+        ..
+
+
+        .OrgInt ,
+         ORG $+1
+         ALIGN 256
+@.0.Vec  EQU $/256#-1
+         ORG $-1
+@.0.VecAddr  DW @.1
+        ..
+
+
+        .AlignEQU =û
+         ORG @.1
+         ORGALI 256
+         EQU @.0=$
+         ORG @.
+        ..
+
+
+
+
+        .DSQPACKSAVE ,,û
+         ORG @.1
+         DSQ.Pack @.2
+         SaveBIN @.0,@.1,$-@.1
+         ORG @.
+        ..
+
+

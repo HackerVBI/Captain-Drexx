@@ -1,0 +1,63 @@
+
+
+
+LOADER_INCLUDE_START  EQU 0
+BLOKS_INCLUDE_START   EQU 8192
+
+
+
+        .SaveBLK ,û
+         ORG @.1.SIZE
+         ORGALI 256
+@.1.ASIZE EQU $
+@.1.B     EQU HIGH(@.1.ASIZE)
+         ORG @.
+         SaveBIN @.0,@.1.START,@.1.ASIZE
+        ..
+
+
+
+        .SaveTrdBLK ,,,,û
+         LoadTRD @.1,@.2
+@.3.START EQU $ASAM.LOAD.START
+@.3.SIZE  EQU $ASAM.LOAD.SIZE
+         SaveBLK @.0,@.3
+
+         ORG LOADER_INCLUDE_START
+         DB "  DW "
+         DT @.3.START
+         DB 13,10
+         DB "  DB "
+         DT @.3.B
+         DB ","
+         DT @.4
+         DB 13,10
+         DB 13,10
+
+         EQU LOADER_INCLUDE_START=$
+
+         ORG BLOKS_INCLUDE_START
+         DB "  AddTrdBLK "
+         DB 34
+         DB @.0
+         DB 34
+         DB 13,10
+         EQU BLOKS_INCLUDE_START=$
+        ..
+
+        
+
+        SaveTrdBLK "block00.blk","dr.trd","loadp.C" ,BLOCK00,16
+        SaveTrdBLK "block01.blk","dr.trd","td0p.C"  ,BLOCK01,16
+        SaveTrdBLK "block02.blk","dr.trd","td1p.C"  ,BLOCK02,17
+        SaveTrdBLK "block03.blk","dr.trd","td3p.C"  ,BLOCK03,19
+        SaveTrdBLK "block04.blk","dr.trd","td4p.C"  ,BLOCK04,20
+        SaveTrdBLK "block05.blk","dr.trd","td6p.C"  ,BLOCK05,22
+        SaveTrdBLK "block06.blk","dr.trd","tdbp.C"  ,BLOCK06,16
+
+        SaveBIN "blockpak.inc",0,LOADER_INCLUDE_START
+        SaveBIN "blockinc.inc",8192,BLOKS_INCLUDE_START-8192
+
+
+;        ASAM.Label LOA.B
+;        ASAM.Label.Save "loader.inc"

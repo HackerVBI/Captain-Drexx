@@ -1,0 +1,29 @@
+_ASAM_LABEL_SIZE     EQU 32
+_ASAM_LABEL_SADDR    EQU 0
+_ASAM_LABEL_ADDR     EQU _ASAM_LABEL_SADDR
+_ASAM_LABEL_PAGE     EQU 0
+_ASAM_LABEL_TPAGE    EQU 0
+
+        .ASAM.LABEL û
+         EQU _ASAM_LABEL_TPAGE=$PAGE
+         ORG _ASAM_LABEL_ADDR
+         PAGE _ASAM_LABEL_PAGE
+         DS _ASAM_LABEL_SIZE,32
+         ORG _ASAM_LABEL_ADDR
+         DB @.0
+         ORG _ASAM_LABEL_ADDR+_ASAM_LABEL_SIZE
+         DB "EQU "
+         DT @.0
+         DB 13
+         EQU _ASAM_LABEL_ADDR=$
+         ORG @.0
+         PAGE _ASAM_LABEL_TPAGE
+         ORG @.
+        ..
+
+        .ASAM.LABEL.SAVE û
+         EQU _ASAM_LABEL_TPAGE=$PAGE
+         PAGE _ASAM_LABEL_PAGE
+         SaveBIN @.0,_ASAM_LABEL_SADDR,_ASAM_LABEL_ADDR
+         PAGE _ASAM_LABEL_TPAGE
+        ..

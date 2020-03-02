@@ -1,0 +1,136 @@
+
+
+        EQU $ASAM.PASS.ERROR=3
+
+        Include "asam_l.az8"
+        Include "DOS\dosdsq.inc"
+;        Include "loados.inc"
+
+
+LOA.START       EQU DOS.STACK
+
+        ORG LOA.START
+;        LD A,(23830)
+;        LD (DOS_DOS+(DOS_DRIVE_23830-DOS.START)),A
+        LD HL,DOS.START
+        LD DE,DOS_DOS
+        LD BC,DOS.SIZE
+        LDIR
+        LD HL,22528
+        LD DE,22529
+        LD BC,767
+	xor a
+        OUT (254),A
+        LD (HL),A
+        LDIR
+        LD HL,16384
+        LD DE,16385
+        LD BC,6143
+        LD (HL),L
+        LDIR
+
+M1      DI
+;        LD SP,DOS.STACK
+        LD A,63
+        LD I,A
+        IM 1
+        LD IY,23610
+        EI
+        HALT
+
+;        LD A,195
+;        LD (05F00H),A
+;        LD HL,M1
+;        LD (05F01H),HL
+
+;        PUSH HL
+M2      LD HL,BLOCK_RECORD
+        LD E,(HL)
+        INC HL
+        LD D,(HL)
+        INC HL
+        LD B,(HL)
+        INC HL
+        LD A,(HL)
+        INC HL
+        LD (M2+1),HL
+        PUSH BC
+        LD BC,32765
+        OUT (C),A
+        POP BC
+        EX DE,HL
+        LD (M3+1),HL
+        CALL DOS.LoadTR
+        LD HL,(23796)
+        LD (MOLDTRKSEC),HL
+;        LD SP,24576
+M3      CALL 0
+        JR M1
+
+BLOCK_RECORD    Include "blockpak.inc"
+
+FLUSHx: DI
+        LD SP,DOS.STACK
+        LD HL,DOS_DOS
+        LD DE,DOS.START
+        LD BC,DOS.SIZE
+        LDIR
+        CALL DOS.INIT
+MOLDTRKSEC EQU $+1
+        LD HL,0;(23796)         ;GET TRK/SEC POSITION
+        LD (23796),HL
+        JP M1
+
+        ORG 05F00H
+        JP FLUSHx
+DOS_DOS    EQU $;IncBIN "DOS\dos.bin"
+
+_END   EQU $
+
+       .64
+        DB 'VBI '
+       ..
+       ORG _END
+
+LOA.END  EQU $
+LOA.SIZE EQU LOA.END-LOA.START
+
+
+
+
+        .SaveBLK ,û
+         ORG @.1.SIZE
+         ORGALI 256
+@.1.ASIZE EQU $
+@.1.B     EQU HIGH(@.1.ASIZE)
+         ORG @.
+         SaveBIN @.0,@.1.START,@.1.ASIZE
+        ..
+        SaveBLK "loader.cod",LOA
+
+
+
+;        .SaveTrdBLK ,,,û
+;         LoadTRD @.1,@.2
+;@.3.START EQU $ASAM.LOAD.START
+;@.3.SIZE  EQU $ASAM.LOAD.SIZE
+;         SaveBLK @.0,@.3
+;        ..
+;
+;        SaveTrdBLK "block00.blk","d3.trd","girl.C",BLOCK00
+
+
+
+        ASAM.Label LOA.START
+        ASAM.Label LOA.END
+        ASAM.Label LOA.SIZE
+        ASAM.Label LOA.ASIZE
+        ASAM.Label LOA.B
+        ASAM.Label.Save "loader.inc"
+
+
+
+
+
+
+        SaveLabels "loader.txt"

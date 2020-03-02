@@ -1,0 +1,138 @@
+
+        EQU $ASAM.PASS.ERROR=2
+
+        Include "DOS\dosdsq.inc"
+        Include "loader.inc"
+;        Include "pack.inc"
+;        Include "orel.inc"
+        Include "speccy.az8"
+
+BOOT.PTR EQU DOS.STACK
+
+         CreateImage "CptDrexx.trd"
+
+BOOT_START EQU 32768
+
+          ORG 23867
+;          ORG 0
+BasStart  DB 0,1
+          DW BasVar-$-2
+
+          DB 0F9H,0C0H,'(',0B0H,'A$+A)'
+          DB ':'
+          DB 0F9H,0C0H,'(',0B0H,'A$+B)'
+          DB 00DH
+
+
+
+BasVar    EQU $
+
+          .MAC_BAS_STRING û
+           DW @..-$-2
+           DB @.0
+          ..
+
+          DB 'A'
+          MAC_BAS_STRING 0BEH,'23635+256*',0BEH,'23636'
+
+          DB 'A'
+          DW @Size
+
+@Start:   LD HL,@StartX
+          EI
+          HALT
+          LD A,7
+          OUT (254),A
+          LD HL,22528
+          LD DE,22529
+          LD BC,767
+          LD (HL),7+7*8
+          LDIR
+          Exit.Basic.48
+@StartX:  DI
+          LD HL,(23635)
+          LD DE,@EXEC_OFS
+          ADD HL,DE
+          LD DE,BOOT_START
+          LD BC,@EXEC_S
+          LDIR
+          JP BOOT_START
+@EXEC:    Phase BOOT_START
+           LD SP,DOS.STACK
+           LD HL,(23796)         ;GET TRK/SEC POSITION
+           PUSH HL
+           LD A,(23830)
+           LD (DOS_DOS+(DOS_DRIVE_23830-DOS.START)),A
+           LD HL,DOS_DSQ
+           LD DE,DSQ.START
+           LD C,DSQ.SIZE
+           LDIR
+           LD DE,DOS.START
+           LD C,DOS.SIZE
+           LDIR
+           CALL DOS.INIT
+;@DOSTRK    EQU $+1
+;           LD HL,0
+           POP HL
+           LD (23796),HL
+
+;ZHUCHKA
+;;;           LD HL,OREL_CO.START
+;;;           PUSH HL
+;;;           LD B,OREL_CO.B
+;;;           JP DOS.LoadTR
+;M1        LD A,R
+;          AND 7
+;          OUT (254),A
+;          JR M1
+           LD HL,LOA.START
+           PUSH HL
+           LD B,LOA.B
+           JP DOS.LoadTR
+
+DOS_DSQ    IncBIN "DOS\dsq.bin"
+DOS_DOS    IncBIN "DOS\dos.bin"
+          UnPhase
+@EXEC_S   EQU $-@EXEC
+
+@START_OFS  EQU @Start-BasStart
+@STARTXOFS  EQU @StartX-BasStart
+@EXEC_OFS   EQU @EXEC-BasStart
+
+@Size     EQU $-@Start
+
+          DB 'a',0,0
+          DW @START_OFS
+          DB 0
+          DB 'b',0,0
+          DW @STARTXOFS
+          DB 0
+BasVarSize EQU $-BasVar
+          DB 080H,0AAH
+          DW 1                          ;Basic Auto-Start Line
+BasEnd    EQU $
+BasSize   EQU BasEnd-BasStart
+
+_END   EQU $
+       .64
+        DB 'Speccy '
+       ..
+       ORG _END
+
+          SaveTRD "SET START",'SET SIZE',BasSize-4,BasSize-4-BasVarSize
+          SaveTRD 'CptDrexx.trd','boot.B',BasStart,BasSize
+
+
+
+        .AddTrdBLK û
+         ORG 0
+         IncBIN @.0
+         SaveAddTRD "CptDrexx.trd","boot.B",0,$
+        ..
+        AddTrdBLK "loader.cod"
+
+;        AddTrdBLK "block00.blk"
+        Include "blockinc.inc"
+
+
+        SaveLabels "boot.txt"

@@ -1,0 +1,285 @@
+
+
+
+        EQU $ASAM.PASS.ERROR=2
+        Include "..\asam_l.az8"
+
+        ORG 23296       ;+DOS_OFS
+
+DSQ.START       EQU $
+
+;DEPACK  PUSH DE
+;        INC HL
+;        LD C,(HL)
+;        INC HL
+;        LD B,(HL)
+;        DEC HL
+;        DEC HL
+;        DEC DE
+;        EX DE,HL
+;        ADD HL,BC
+;        PUSH HL
+;        EX DE,HL
+;        AND A
+;        PUSH HL
+;        SBC HL,DE
+;        POP HL
+;        JR NC,DEPAx1
+;        LDDR
+;        JR DEPAx2
+;DEPAx1  INC HL
+;        INC DE
+;        SBC HL,BC
+;        EX DE,HL
+;        SBC HL,BC
+;        EX DE,HL
+;        LDIR
+;DEPAx2  POP HL
+;        POP DE
+
+DEPACKX DSQ.DePacker
+
+DSQ.END         EQU $
+DSQ.SIZE  EQU DSQ.END-DSQ.START
+
+        SaveBin "dsq.bin",DSQ.START,DSQ.SIZE
+
+
+
+
+DOS_PCO EQU 23552
+
+        .DOS.PutB ,û
+         DB @.0-DOS_PCO,@.1
+         EQU DOS_PCO=@.0
+        ..
+
+        .DOS.PutW ,û
+         DOS.PutB @.0+0,@.1
+         DOS.PutB @.0+1,@.1/256#
+        ..
+
+
+
+;DOS_RES EQU 16384
+DOS_FLU EQU 331-42;-43 ;-42-MAX        ;948
+;DOS_OFS EQU 32
+;;;DOS_STA EQU 18432-DOS_OFS
+
+;        PHASE DOS_RES
+        ORG DOS_PCO+DOS_FLU
+
+DOS.START       EQU $
+
+
+
+;;;        DW 0
+DOS_ERR_PTR DW DOS_ERROR
+DOS_ERROR:
+DOS_ESP LD SP,0
+        CALL DOS.INIT
+DOS_EHL LD HL,0
+DOS_EDE LD DE,0
+DOS_EBC LD BC,0
+DOS_ERE JP 15635
+
+DOS.LoadTR:
+          LD DE,(23796)
+DOS.LoadTRDE:
+          LD (DOS_ESP+1),SP
+          LD C,5
+          LD (DOS_EHL+1),HL
+          LD (DOS_EDE+1),DE
+          LD (DOS_EBC+1),BC
+;          LD HL,DOS.INIT
+;          PUSH HL
+;          JR DOS_ESP
+          JR DOS_ERE
+;          JP 15635
+
+
+DOS.INIT:
+        DI
+        LD A,63
+        LD I,A
+        IM 1
+;        LD HL,23552
+;        LD DE,DOS_SWBUF
+;        LD BC,DOS_FLU
+;        LDIR
+        LD IY,23610
+;        LD BC,0050H
+;        LD DE,50D4H
+;        LD HL,10072
+;        EXX
+;DOS.CLR:
+;DOS_III:
+        LD HL,DOS_PCO
+        LD DE,DOS_PCO+1
+        LD BC,DOS_FLU-1
+        LD (HL),L
+        LDIR
+
+;        CALL DOS_CLR
+;        EI
+;        RET
+;
+;DOS_CLR:
+        LD DE,DOS_PCO
+        LD HL,DOS_ITB
+DOS_INITx2
+        LD A,(HL)
+        INC HL
+        OR A
+        RET Z
+        ADD A,E
+        LD E,A
+        JR NC,DOS_INITx1
+        INC D
+DOS_INITx1
+        LD A,(HL)
+        LD (DE),A
+        INC HL
+        JR DOS_INITx2
+
+
+
+
+DOS_ITB DOS.PutW 23610,0CCFFH
+        DOS.PutW 23613,DOS_ERR_PTR
+        DOS.PutW 23641,23868
+        DOS.PutW 23651,23883
+        DOS.PutW 23653,23883
+        DOS.PutB 23734,244
+        DOS.PutB 23746,201
+
+        DOS.PutB 23752,255;131      ;FDD-A TYPE
+        DOS.PutB 23753,255;131      ;FDD-B TYPE
+        DOS.PutB 23754,255;131      ;FDD-C TYPE
+        DOS.PutB 23755,255;131      ;FDD-D TYPE
+
+;;;        DOS.PutB 23798,1        ;FDD A=0 B=1 C=2 D=3
+;;;        DOS.PutW 23800,0101H
+
+        DOS.PutB 23802,9        ;SPEED OF FDD-A HEAD
+        DOS.PutB 23803,9        ;SPEED OF FDD-B HEAD
+        DOS.PutB 23804,9        ;SPEED OF FDD-C HEAD
+        DOS.PutB 23805,9        ;SPEED OF FDD-D HEAD
+
+;        DOS.PutB 23814,9
+        DOS.PutB 23820,255
+DOS_DRIVE_23830 EQU $+1
+        DOS.PutB 23830,03CH      ;FDD A=3CH B=3DH C=3EH D=3FH
+;        DOS.PutB 23831,0AAH
+;;;        DOS.PutB 23833,1         ;FDD A=0 B=1 C=2 D=3
+;        DOS.PutB 23840,249
+
+
+        DB 0
+
+
+
+;DEPACKS:LD A,H
+;        CP 192
+;        JR C,DO_L0x1
+;
+;        PUSH HL BC
+;        LD BC,DOS_OFS
+;        LD DE,DOS_TEM+DOS_OFS-1
+;        DEC HL
+;        LDDR
+;        POP BC
+;        INC HL
+;        EX (SP),HL
+;
+;        LD DE,0-DOS_OFS
+;        PUSH HL HL
+;        ADD HL,DE
+;        POP DE
+;        EX DE,HL
+;        LDIR
+;        EX DE,HL
+;        DEC HL
+;        POP DE
+;        CALL DEPACKX
+;
+;        POP DE
+;        PUSH BC
+;        LD HL,DOS_TEM
+;        LD BC,DOS_OFS
+;        LDIR
+;        POP BC
+;        RET
+;
+;DO_L0x1 LD (DO_L0x2+1),HL
+;        PUSH HL
+;        LD E,L
+;        LD D,H
+;        ADD HL,BC
+;        DEC HL
+;        EX DE,HL
+;        LD BC,DOS_OFS
+;        ADD HL,BC
+;        EX DE,HL
+;        PUSH DE HL
+;        DEC HL
+;        LD D,(HL)
+;        DEC HL
+;        LD E,(HL)
+;DO_L0x2 LD HL,0
+;        ADD HL,DE
+;        LD DE,DOS_TEM
+;        LDIR
+;        POP HL DE
+;        PUSH DE
+;        CALL DEPACKX
+;        POP HL DE
+;        PUSH BC
+;        LDIR
+;        LD HL,DOS_TEM
+;        LD BC,DOS_OFS
+;        LDIR
+;        POP BC
+;        RET
+;
+;DOS_TEM EQU DSQ.END
+
+
+
+
+
+
+DOS.END   EQU $
+DOS.SIZE  EQU DOS.END-DOS.START
+;DOS.STACK EQU DOS.END+256+32
+DOS.STACK EQU DOS.END+64+32
+
+        SaveBin "dos.bin",DOS.START,DOS.SIZE
+
+        ORG DOS.START
+        DSQ.Pack DOS.SIZE
+
+DOS.SIZEP EQU $-DOS.START
+
+        SaveBin "dos.dsq",DOS.START,DOS.SIZEP
+
+;        ASAM.Label DEPACK
+        ASAM.Label DEPACKX
+;        ASAM.Label DEPACKS
+
+;        ASAM.Label DOS_TRZ
+        ASAM.Label DOS.INIT
+;        ASAM.Label DOS.CLR
+        ASAM.Label DOS.START
+        ASAM.Label DOS.SIZE
+        ASAM.Label DOS.END
+        ASAM.Label DSQ.START
+        ASAM.Label DSQ.SIZE
+        ASAM.Label DSQ.END
+        ASAM.Label DOS.STACK
+        ASAM.Label DOS.LoadTR
+        ASAM.Label DOS.LoadTRDE
+        ASAM.Label DOS_DRIVE_23830
+        ASAM.Label.Save "dosdsq.inc"
+
+        SaveLabels "dosdsq.txt"

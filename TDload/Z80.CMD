@@ -1,0 +1,5316 @@
+;
+;       Compiler By Rob F.
+;
+;          CMD Ins : Z80
+;             File : z80.cmd
+;         Used EXT : *.az8
+;    Used Compiler : asam.exe v.001.024C
+;
+;                           0987654321
+; CFG:00000000000000000000000011111110
+;                             ³³³³³³³ÀÂÄ 0:INT Mode OFF
+;                             ³³³³³³³ ÀÄ 1:INT Mode ON
+;                             ³³³³³³³
+;                             ³³³³³³ÀÄÂÄ 0:NOP
+;                             ³³³³³³  ÀÄ 1:Change 'DFG' > "DFG"
+;                             ³³³³³³
+;                             ³³³³³ÀÄÄÂÄ 0:NOP
+;                             ³³³³³   ÀÄ 1:Low() & High() Converting
+;                             ³³³³³
+;                             ³³³³ÀÄÄÄÂÄ 0:EQU Disabled MACRO-LABLES
+;                             ³³³³    ÀÄ 1:EQU Work For ALL LABELS
+;                             ³³³³
+;                             ³³³ÀÄÄÄÄÂÄ 0:NORMAL HEX FORMAT
+;                             ³³³     ÀÄ 1:HEX FORMAT FROM ZX-GENS (#ABC0 = 0ABCH)
+;                             ³³³
+;                             ³³ÀÄÄÄÄÄÂÄ 0:ONE COMMAND IN LINE
+;                             ³³      ÀÄ 1:MANY COMMAND "LD HL,16384:LDIR:POP HL"
+;                             ³³
+;                             ³ÀÄÄÄÄÄÄÂÄ 0:DUBLICATE WITH SYMBOL "."
+;                             ³       ÀÄ 1:DUBLICATE WITH SYMBOL "." AND WORD "DUP"
+;                             ³
+;                             ÀÄÄÄÄÄÄÄÂÄ 0:NORMAL CMD MODE
+;                                     ÀÄ 1:SYMBOL "XXX"-XXX (ONLY COMMAND)
+;
+
+.PHASE û
+ ORGOF @.0,$$
+..
+
+.UNPHASEû
+ ORGOF $$,$$
+..
+
+;For Hole ModE:
+; A=0 Hole Mode Disable
+; A=1 Hole Mode Enable
+; A=2 Hole Reset (Fill Mask By Zerro)
+; A=3 Hole Set By Formula
+;     nn=Start Addres
+;      n=Set Hole Size Of Blok
+;     mm=Reset Hole Size Of Blok
+;      m=Block Counter
+
+HOLEMODE ON
+>07H:A.1 58H
+
+HOLEMODE nn
+>07H:A.4 58H:nn
+;>07H:A.4 58H:nn
+
+HOLEMODE OFF
+>07H:A.0 58H
+
+HOLERESET
+>07H:A.2 58H
+
+HOLEBLOCK nn,n,mm,m
+>07H:A.3 58H:nn.n.mm.m
+
+HOLEBLOCK nn,n
+>07H:A.3 07H:B.0 07H:C.1 58H:nn.n.B.C
+
+EXECFILE ,nn
+>57H:0.nn
+
+OPENLISTFILE ,nn
+>56H:0.nn
+
+SETCFGBIT 
+>55H:0
+
+INLOCAL ,nn
+>54H:0.nn
+
+.LOCALMODULE
+ InLocal @.0,46
+..
+
+.ENDLOCALMODULE
+ InLocal "...",0
+..
+
+ASAM.MATH ,nn
+>53H:0.nn
+
+.ASAM.MATH.DATA û
+ ASAM.MATH @.0,255
+..
+
+;StartAddr,Buffer,Decrunch,AutoStart,Size,"Y"/"N"-DePacker,PackMode
+.DSQ.PACK ,,,,,,û
+        SetCfgBit "6:0"
+        MoveMemAZ 0,49152:0D0H,4096
+        ORG 0
+        IncBIN "ASAM:\dsq-pac.bin"
+        MoveMemAZ 0,16724:16,2732
+        MoveMemAZ 2732,23552:16,298
+        MoveMemZA 49152:0D0H,0,4096
+        ORG @.
+
+        MoveMemAZ @.,24500:16,@.4
+
+        PokeZB (4154H+7:16)=@.6
+        PokeZB (44C8H+1:16)=@.5
+        PokeZW (5CE8H:16)=@.4
+        PokeZW (46B5H+1:16)=@.0
+        PokeZW (46EEH+1:16)=@.1
+        PokeZW (470BH+1:16)=@.2
+        PokeZW (472BH+1:16)=@.3
+        PokeZW (4666H+1:16)=@.2
+        PokeZW (4680H+1:16)=@.3
+
+        EQU $ZX.R.PC=16724
+        EQU $ZX.R.Break=4561H
+
+        EQU $ZX.r.SP=24500
+        EQU $ZX.r.IY=23610
+        EQU $ZX.r.IM=1
+
+        EQU $ZX.r.Page=16
+        RunEmulZXne
+        MoveMemZA 24500:16,@.,$ZX.r.DE
+        ORG @.+$ZX.r.DE
+        EQU $DSQ.PACKED.SIZE=$ZX.r.DE
+        SetCfgBit "6:1"
+..
+
+.DSQ.PACK û
+        DSQ.Pack $,23296,16384,52H,@.0,"N",1
+        SetCfgBit "6:0"
+        MoveMemAA @.+7,@.:256,($-@.)-7
+        ORG $-7
+        DW @.0
+        DB 1+8
+        EQU $DSQ.PACKED.SIZE=$DSQ.PACKED.SIZE-4
+        SetCfgBit "6:1"
+..
+
+;HL=PACK.END-1  DE=UNPACK.START  =>  HL=UNPACK.START  BC=UNPACK.SIZE
+.DSQ.DEPACKER
+
+        EXX
+        PUSH HL
+        EXX
+
+        DEC DE
+        PUSH DE
+        LD A,(HL)
+        LD (@M25699+1),A
+        DEC HL
+        LD D,(HL)
+        DEC HL
+        LD E,(HL)
+        DEC HL
+        EX (SP),HL
+        PUSH HL
+        ADD HL,DE
+        LD (@DECRNC1+1),HL
+        POP HL
+        LD (@M25711+1),HL
+        INC HL
+        EX (SP),HL
+        PUSH DE
+        CALL @DECRNCH
+        POP BC
+        POP HL
+
+        EXX
+        POP HL
+        EXX
+        RET
+
+@DECRNCH             ;HL=FROM,  DE=TO
+        LD BC,264
+        EXX
+@DECRNC1
+        LD DE,0
+@M25605
+        LD HL,1
+        CALL @M25736
+        JR NC,@M25652
+        LD B,L
+        INC L
+        CALL @M25736
+        JR C,@M25668
+        INC B
+        LD L,4
+        CALL @M25736
+        JR C,@M25668
+        CALL @M25736
+        JR NC,@M25664
+        LD B,L
+        CALL @M25723
+        ADD A,8
+        LD L,A
+        CP 23
+        JR C,@M25675
+        LD B,5
+        CALL @M25723
+        ADD A,14
+        LD L,A
+@M25652
+        LD B,8
+        CALL @M25723
+        LD (DE),A
+        DEC DE
+        DEC L
+        JR NZ,@M25652
+        JR @M25711
+@M25664
+        LD L,23
+@M25666
+        LD B,8
+@M25668
+        CALL @M25723
+        ADD HL,BC
+        INC A
+        JR Z,@M25666
+@M25675
+        PUSH HL
+        CALL @M25736
+        LD HL,33
+        JR C,@M25699
+        LD B,9
+        ADD HL,DE
+        CALL @M25736
+        JR NC,@M25704
+        LD B,5
+        LD L,E
+        LD H,D
+        INC HL
+        JR @M25704
+@M25699
+        LD B,0
+        LD H,2
+        ADD HL,DE
+@M25704
+        CALL @M25723
+        ADD HL,BC
+        POP BC
+        LDDR
+@M25711
+        LD HL,0
+        SBC HL,DE
+        JR C,@M25605
+        RET
+@M25723
+        XOR A
+        LD C,A
+@M25725
+        CALL @M25736
+        RL C
+        RLA
+        DJNZ @M25725
+        LD B,A
+        LD A,C
+        RET
+@M25736
+        EXX
+        DJNZ @M25742
+        LD B,C
+        LD E,(HL)
+        DEC HL
+@M25742
+        RL E
+        EXX
+        RET
+..
+
+
+MOVEMEMAA nn,mm,s,ss
+>51H:nn.mm.s.ss
+
+.MOVEMEMAA ,:,û
+ MoveMemAA @.0,@.1,@.2,@.3
+..
+
+.MOVEMEMAA ,,û
+ MoveMemAA @.0,@.1,256,@.2
+..
+
+EMLZX.LOADTRD ,n
+>50H:0.n
+
+EMLZX.KEY 
+>4FH:0
+
+.EMLZX.KEYCLR
+ EmlZX.Key "###"
+..
+
+.EMLZX.KEYADD û
+ EmlZX.Key @.0
+..
+
+MOVEMEMZA nn,n,mm,m
+>48H:nn.n.mm.m
+
+.MOVEMEMZA :,,û
+ MoveMemZA @.0,@.1,@.2,@.3
+..
+
+MOVEMEMAZ nn,n,mm,m
+>49H:nn.n.mm.m
+
+.MOVEMEMAZ ,:,û
+ MoveMemAZ @.0,@.1,@.2,@.3
+..
+
+PEEKZ ,n,mm,m
+>4CH:0.n.mm.m
+
+.PEEKZB =(:)û
+ PeekZ @.0,@.1,@.2,0
+..
+
+.PEEKZW =(:)û
+ PeekZ @.0,@.1,@.2,1
+..
+
+PEEKA ,n,mm
+>4DH:0.n.mm
+
+.PEEKAB =()û
+ PeekA @.0,@.1,0
+..
+
+.PEEKAW =()û
+ PeekA @.0,@.1,1
+..
+
+POKEZ nn,n,mm,m
+>4AH:nn.n.mm.m
+
+.POKEZB (:)=û
+ PokeZ @.0,@.1,@.2,0
+..
+
+.POKEZW (:)=û
+ PokeZ @.0,@.1,@.2,1
+..
+
+POKEA nn,n,mm
+>4BH:nn.n.mm
+
+.POKEAB ()=û
+ PokeA @.0,@.1,0
+..
+
+.POKEAW ()=û
+ PokeA @.0,@.1,1
+..
+
+RUNEMULZX nn
+>4EH:nn
+
+.RUNEMULZX
+ RunEmulZX 0
+..
+
+.RUNEMULZXNE
+ RunEmulZX 1
+..
+
+IFDBS ,
+>42H:0.1
+
+ORG nn
+>05H:nn 20H:nn
+
+ORG nn,mm
+>05H:nn 17H:nn.nn.mm 20H:nn
+
+.ORG :
+ ORG @.0
+ PAGE @.1
+..
+
+ORGOF nn,mm
+>05H:nn 05H:mm 40H:nn.mm
+
+PAGE nn
+>09:nn 27H:nn
+
+INTMODE.ON
+>07H:A.1 29H:A
+
+INTMODE.OFF
+>07H:A.0 29H:A
+
+INCLUDE 
+>3FH:0
+
+INCBIN 
+>2FH:0
+
+SAVEBIN ,nn,mm
+>31H:0.nn.mm
+
+INCBIN ,
+>2EH:0.1
+
+INCTRD ,
+>2EH:0.1
+
+INCZX$ 
+>2DH:0
+
+EQUSIZE 
+>18H:A.0 25H:A
+
+EQUSIZEZX$ 
+>1AH:A.0 25H:A
+
+EQUSTARTZX$ 
+>1CH:A.0 25H:A
+
+EQUSIZETRD ,
+>19H:A.0.1 25H:A
+
+EQUSTARTTRD ,
+>1BH:A.0.1 25H:A
+
+EQULASTSIZE
+>1DH:A 25H:A
+
+EQULASTSTART
+>1EH:A 25H:A
+
+LOADTRD ,
+>0FH:B 1BH:A.0.1 20H:A 2EH:0.1 20H:B 1FH
+
+LOADZX$ 
+>0FH:B 1CH:A.0.1 20H:A 2DH:0 20H:B 1FH
+
+LOAD ,nn
+>0FH:B 20H:nn 2FH:0 20H:B 1FH
+
+SAVETRD ,,nn,mm
+>37H:0.1.nn.mm
+
+SAVEADDTRD ,,nn,mm
+>38H:0.1.nn.mm
+
+DB "
+>21H
+
+DW "
+>22H
+
+DD "
+>23H
+
+DS nn
+>07H:A.0 24H:nn.A 05H:nn
+
+DS nn,mm
+>24H:nn.mm 05H:nn
+
+DEFB "
+>21H
+
+DEFW "
+>22H
+
+DEFD "
+>23H
+
+DEFS nn
+>07H:A.0 24H:nn.A 05H:nn
+
+DEFS nn,mm
+>24H:nn.mm 05H:nn
+
+DT nn
+>2BH:nn 05H:nn
+
+EQU nn
+>25H:nn
+
+EQU (nn)
+>25H:nn
+
+EQU ,nn
+>41H:0.nn
+
+EQU ,nn,mm
+>41H:0.nn.mm
+
+.EQU =()
+ EQU @.0,@.1
+..
+
+.EQU =
+ EQU @.0,@.1
+..
+
+.EQUID []=()
+ EQU @.0,@.2,@.1
+..
+
+.EQUID []=
+ EQU @.0,@.2,@.1
+..
+
+DATA n
+>28H:n
+
+BIT n
+>26H:n
+
+SETTEXTXOR "
+>32H
+
+RESETTEXTXOR
+>2CH:A
+
+LOADTEXTXOR 
+>2CH:0
+
+LOADCMD 
+>3EH:0  00:0
+
+SAVELABELS 
+>34H:0
+
+SAVEALLMEM ,
+>35H:0.1
+
+SAVEHEX 
+>07H:A.0 07H:B.65536 07H:C.16 39H:0.A.B.C
+
+CREATEIMAGE 
+>3AH:0
+
+CREATEIMAGE ,
+>3AH:0.1
+
+SAVEADDTAP ,,nn,mm
+>3BH:0.1.nn.mm
+
+SAVEADDTAP ,ss,nn,mm
+>3BH:0.ss.nn.mm
+
+SAVEHEX ,nn,mm
+>07H:C.16 39H:0.nn.mm.C
+
+SAVEHEX ,nn,mm,ss
+>39H:0.nn.mm.ss
+
+ALIGN nn
+>05H:nn 0FH:C 17H:nn.C.nn 0AH:B.nn 0CH:A.B.C 07H:D.0 24H:A.D
+
+ORGALI nn
+>05H:nn 0FH:C 17H:nn.C.nn 20H:nn
+
+PUSHA
+ 00H:0E5H 08H:0D5H 10H:0C5H 18H:0F5H 20H:0D9H 28H:008H 30H:0E5H 38H:0D5H 40H:0C5H 48H:0F5H 50H:0DDH 58H:0E5H 60H:0FDH 68H:0E5H
+
+.PUSH 
+ IFDBS @.0,"HLù0E5H DEù0D5H BCù0C5H AFù0F5H IXù0DDH,0E5H IYù0FDH,0E5H"
+..
+
+POPA
+ 00H:0FDH 08H:0E1H 10H:0DDH 18H:0E1H 20H:0F1H 28H:0C1H 30H:0D1H 38H:0E1H 40H:008H 48H:0D9H 50H:0F1H 58H:0C1H 60H:0D1H 68H:0E1H
+
+.POP 
+ IFDBS @.0,"HLù0E1H DEù0D1H BCù0C1H AFù0F1H IXù0DDH,0E1H IYù0FDH,0E1H"
+..
+
+
+JMP s
+>06H:s 08H:s
+ 00:018H 8:s
+
+JZ s
+>06H:s 08H:s
+ 00:028H 8:s
+ T:12.7
+
+JNZ s
+>06H:s 08H:s
+ 00:020H 8:s
+ T:12.7
+
+JC s
+>06H:s 08H:s
+ 00:038H 8:s
+ T:12.7
+
+JNC s
+>06H:s 08H:s
+ 00:030H 8:s
+ T:12.7
+
+JMP nn
+ 00:0C3H 8:nn
+ T:10
+
+JZ nn
+ 00:0CAH 8:nn
+ T:10
+
+JNZ nn
+ 00:0C2H 8:nn
+ T:10
+
+JC nn
+ 00:0DAH 8:nn
+ T:10
+
+JNC nn
+ 00:0D2H 8:nn
+ T:10
+
+NOP
+ 00:000H
+ T:4
+
+LD BC,nn
+ 00:001H 8:nn
+ T:10
+
+LD (BC),A
+ 00:002H
+ T:7
+
+INC BC
+ 00:003H
+ T:6
+
+INC B
+ 00:004H
+ T:4
+
+DEC B
+ 00:005H
+ T:4
+
+LD B,n
+ 00:006H 8:n
+ T:7
+
+RLCA
+ 00:007H
+ T:4
+
+EX AF,AF'
+ 00:008H
+ T:4
+
+EXA
+ 00:008H
+ T:4
+
+ADD HL,BC
+ 00:009H
+ T:11
+
+LD A,(BC)
+ 00:00AH
+ T:7
+
+DEC BC
+ 00:00BH
+ T:6
+
+INC C
+ 00:00CH
+ T:4
+
+DEC C
+ 00:00DH
+ T:4
+
+LD C,n
+ 00:00EH 8:n
+ T:7
+
+RRCA
+ 00:00FH
+ T:4
+
+DJNZ s
+>06H:s 08H:s
+ 00:010H 8:s
+ T:13.8
+
+LD DE,nn
+ 00:011H 8:nn
+ T:10
+
+LD (DE),A
+ 00:012H
+ T:7
+
+INC DE
+ 00:013H
+ T:6
+
+INC D
+ 00:014H
+ T:4
+
+DEC D
+ 00:015H
+ T:4
+
+LD D,n
+ 00:016H 8:n
+ T:7
+
+RLA
+ 00:017H
+ T:4
+
+JR s
+>06H:s 08H:s
+ 00:018H 8:s
+ T:12
+
+ADD HL,DE
+ 00:019H
+ T:11
+
+LD A,(DE)
+ 00:01AH
+ T:7
+
+DEC DE
+ 00:01BH
+ T:6
+
+INC E
+ 00:01CH
+ T:4
+
+DEC E
+ 00:01DH
+ T:4
+
+LD E,n
+ 00:01EH 8:n
+ T:7
+
+RRA
+ 00:01FH
+ T:4
+
+JR NZ,s
+>06H:s 08H:s
+ 00:020H 8:s
+ T:12.7
+
+LD HL,nn
+ 00:021H 8:nn
+ T:10
+
+LD (nn),HL
+ 00:022H 8:nn
+ T:16
+
+INC HL
+ 00:023H
+ T:6
+
+INC H
+ 00:024H
+ T:4
+
+DEC H
+ 00:025H
+ T:4
+
+LD H,n
+ 00:026H 8:n
+ T:7
+
+DAA
+ 00:027H
+ T:4
+
+JR Z,s
+>06H:s 08H:s
+ 00:028H 8:s
+ T:12.7
+
+ADD HL,HL
+ 00:029H
+ T:11
+
+LD HL,(nn)
+ 00:02AH 8:nn
+ T:16
+
+DEC HL
+ 00:02BH
+ T:6
+
+INC L
+ 00:02CH
+ T:4
+
+DEC L
+ 00:02DH
+ T:4
+
+LD L,n
+ 00:02EH 8:n
+ T:7
+
+CPL
+ 00:02FH
+ T:4
+
+JR NC,s
+>06H:s 08H:s
+ 00:030H 8:s
+ T:12.7
+
+LD SP,nn
+ 00:031H 8:nn
+ T:10
+
+LD (nn),A
+ 00:032H 8:nn
+ T:13
+
+INC SP
+ 00:033H
+ T:6
+
+INC (HL)
+ 00:034H
+ T:11
+
+DEC (HL)
+ 00:035H
+ T:11
+
+LD (HL),n
+ 00:036H 8:n
+ T:10
+
+SCF
+ 00:037H
+ T:4
+
+JR C,s
+>06H:s 08H:s
+ 00:038H 8:s
+ T:12.7
+
+ADD HL,SP
+ 00:039H
+ T:11
+
+LD A,(nn)
+ 00:03AH 8:nn
+ T:13
+
+DEC SP
+ 00:03BH
+ T:6
+
+INC A
+ 00:03CH
+ T:4
+
+DEC A
+ 00:03DH
+ T:4
+
+LD A,n
+ 00:03EH 8:n
+ T:7
+
+CCF
+ 00:03FH
+ T:4
+
+LD B,B
+ 00:040H
+ T:4
+
+LD B,C
+ 00:041H
+ T:4
+
+LD B,D
+ 00:042H
+ T:4
+
+LD B,E
+ 00:043H
+ T:4
+
+LD B,H
+ 00:044H
+ T:4
+
+LD B,L
+ 00:045H
+ T:4
+
+LD B,(HL)
+ 00:046H
+ T:7
+
+LD B,A
+ 00:047H
+ T:4
+
+LD C,B
+ 00:048H
+ T:4
+
+LD C,C
+ 00:049H
+ T:4
+
+LD C,D
+ 00:04AH
+ T:4
+
+LD C,E
+ 00:04BH
+ T:4
+
+LD C,H
+ 00:04CH
+ T:4
+
+LD C,L
+ 00:04DH
+ T:4
+
+LD C,(HL)
+ 00:04EH
+ T:7
+
+LD C,A
+ 00:04FH
+ T:4
+
+LD D,B
+ 00:050H
+ T:4
+
+LD D,C
+ 00:051H
+ T:4
+
+LD D,D
+ 00:052H
+ T:4
+
+LD D,E
+ 00:053H
+ T:4
+
+LD D,H
+ 00:054H
+ T:4
+
+LD D,L
+ 00:055H
+ T:4
+
+LD D,(HL)
+ 00:056H
+ T:7
+
+LD D,A
+ 00:057H
+ T:4
+
+LD E,B
+ 00:058H
+ T:4
+
+LD E,C
+ 00:059H
+ T:4
+
+LD E,D
+ 00:05AH
+ T:4
+
+LD E,E
+ 00:05BH
+ T:4
+
+LD E,H
+ 00:05CH
+ T:4
+
+LD E,L
+ 00:05DH
+ T:4
+
+LD E,(HL)
+ 00:05EH
+ T:7
+
+LD E,A
+ 00:05FH
+ T:4
+
+LD H,B
+ 00:060H
+ T:4
+
+LD H,C
+ 00:061H
+ T:4
+
+LD H,D
+ 00:062H
+ T:4
+
+LD H,E
+ 00:063H
+ T:4
+
+LD H,H
+ 00:064H
+ T:4
+
+LD H,L
+ 00:065H
+ T:4
+
+LD H,(HL)
+ 00:066H
+ T:7
+
+LD H,A
+ 00:067H
+ T:4
+
+LD L,B
+ 00:068H
+ T:4
+
+LD L,C
+ 00:069H
+ T:4
+
+LD L,D
+ 00:06AH
+ T:4
+
+LD L,E
+ 00:06BH
+ T:4
+
+LD L,H
+ 00:06CH
+ T:4
+
+LD L,L
+ 00:06DH
+ T:4
+
+LD L,(HL)
+ 00:06EH
+ T:7
+
+LD L,A
+ 00:06FH
+ T:4
+
+LD (HL),B
+ 00:070H
+ T:7
+
+LD (HL),C
+ 00:071H
+ T:7
+
+LD (HL),D
+ 00:072H
+ T:7
+
+LD (HL),E
+ 00:073H
+ T:7
+
+LD (HL),H
+ 00:074H
+ T:7
+
+LD (HL),L
+ 00:075H
+ T:7
+
+HALT
+ 00:076H
+ T:4
+
+LD (HL),A
+ 00:077H
+ T:7
+
+LD A,B
+ 00:078H
+ T:4
+
+LD A,C
+ 00:079H
+ T:4
+
+LD A,D
+ 00:07AH
+ T:4
+
+LD A,E
+ 00:07BH
+ T:4
+
+LD A,H
+ 00:07CH
+ T:4
+
+LD A,L
+ 00:07DH
+ T:4
+
+LD A,(HL)
+ 00:07EH
+ T:7
+
+LD A,A
+ 00:07FH
+ T:4
+
+ADD A,B
+ 00:080H
+ T:4
+
+ADD A,C
+ 00:081H
+ T:4
+
+ADD A,D
+ 00:082H
+ T:4
+
+ADD A,E
+ 00:083H
+ T:4
+
+ADD A,H
+ 00:084H
+ T:4
+
+ADD A,L
+ 00:085H
+ T:4
+
+ADD A,(HL)
+ 00:086H
+ T:7
+
+ADD A,A
+ 00:087H
+ T:4
+
+ADC A,B
+ 00:088H
+ T:4
+
+ADC A,C
+ 00:089H
+ T:4
+
+ADC A,D
+ 00:08AH
+ T:4
+
+ADC A,E
+ 00:08BH
+ T:4
+
+ADC A,H
+ 00:08CH
+ T:4
+
+ADC A,L
+ 00:08DH
+ T:4
+
+ADC A,(HL)
+ 00:08EH
+ T:7
+
+ADC A,A
+ 00:08FH
+ T:4
+
+SUB B
+ 00:090H
+ T:4
+
+SUB C
+ 00:091H
+ T:4
+
+SUB D
+ 00:092H
+ T:4
+
+SUB E
+ 00:093H
+ T:4
+
+SUB H
+ 00:094H
+ T:4
+
+SUB L
+ 00:095H
+ T:4
+
+SUB (HL)
+ 00:096H
+ T:7
+
+SUB A
+ 00:097H
+ T:4
+
+SBC A,B
+ 00:098H
+ T:4
+
+SBC A,C
+ 00:099H
+ T:4
+
+SBC A,D
+ 00:09AH
+ T:4
+
+SBC A,E
+ 00:09BH
+ T:4
+
+SBC A,H
+ 00:09CH
+ T:4
+
+SBC A,L
+ 00:09DH
+ T:4
+
+SBC A,(HL)
+ 00:09EH
+ T:7
+
+SBC A,A
+ 00:09FH
+ T:4
+
+AND B
+ 00:0A0H
+ T:4
+
+AND C
+ 00:0A1H
+ T:4
+
+AND D
+ 00:0A2H
+ T:4
+
+AND E
+ 00:0A3H
+ T:4
+
+AND H
+ 00:0A4H
+ T:4
+
+AND L
+ 00:0A5H
+ T:4
+
+AND (HL)
+ 00:0A6H
+ T:7
+
+AND A
+ 00:0A7H
+ T:4
+
+XOR B
+ 00:0A8H
+ T:4
+
+XOR C
+ 00:0A9H
+ T:4
+
+XOR D
+ 00:0AAH
+ T:4
+
+XOR E
+ 00:0ABH
+ T:4
+
+XOR H
+ 00:0ACH
+ T:4
+
+XOR L
+ 00:0ADH
+ T:4
+
+XOR (HL)
+ 00:0AEH
+ T:7
+
+XOR A
+ 00:0AFH
+ T:4
+
+OR B
+ 00:0B0H
+ T:4
+
+OR C
+ 00:0B1H
+ T:4
+
+OR D
+ 00:0B2H
+ T:4
+
+OR E
+ 00:0B3H
+ T:4
+
+OR H
+ 00:0B4H
+ T:4
+
+OR L
+ 00:0B5H
+ T:4
+
+OR (HL)
+ 00:0B6H
+ T:7
+
+OR A
+ 00:0B7H
+ T:4
+
+CP B
+ 00:0B8H
+ T:4
+
+CP C
+ 00:0B9H
+ T:4
+
+CP D
+ 00:0BAH
+ T:4
+
+CP E
+ 00:0BBH
+ T:4
+
+CP H
+ 00:0BCH
+ T:4
+
+CP L
+ 00:0BDH
+ T:4
+
+CP (HL)
+ 00:0BEH
+ T:7
+
+CP A
+ 00:0BFH
+ T:4
+
+RET NZ
+ 00:0C0H
+ T:11.5
+
+POP BC
+ 00:0C1H
+ T:10
+
+JP NZ,nn
+ 00:0C2H 8:nn
+ T:10
+
+JP nn
+ 00:0C3H 8:nn
+ T:10
+
+CALL NZ,nn
+ 00:0C4H 8:nn
+ T:17.10
+
+PUSH BC
+ 00:0C5H
+ T:11
+
+ADD A,n
+ 00:0C6H 8:n
+ T:7
+
+RST 00
+ 00:0C7H
+ T:11
+
+RET Z
+ 00:0C8H
+ T:11.5
+
+RET
+ 00:0C9H
+ T:10
+
+JP Z,nn
+ 00:0CAH 8:nn
+ T:10
+
+CALL Z,nn
+ 00:0CCH 8:nn
+ T:17.10
+
+CALL nn
+ 00:0CDH 8:nn
+ T:17
+
+ADC A,n
+ 00:0CEH 8:n
+ T:7
+
+RST 08
+ 00:0CFH
+ T:11
+
+RET NC
+ 00:0D0H
+ T:11.5
+
+POP DE
+ 00:0D1H
+ T:10
+
+JP NC,nn
+ 00:0D2H 8:nn
+ T:10
+
+OUT (n),A
+ 00:0D3H 8:n
+ T:11
+
+CALL NC,nn
+ 00:0D4H 8:nn
+ T:17.10
+
+PUSH DE
+ 00:0D5H
+ T:11
+
+SUB n
+ 00:0D6H 8:n
+ T:7
+
+RST 16
+ 00:0D7H
+ T:11
+
+RET C
+ 00:0D8H
+ T:11.5
+
+EXX
+ 00:0D9H
+ T:4
+
+JP C,nn
+ 00:0DAH 8:nn
+ T:10
+
+IN A,(n)
+ 00:0DBH 8:n
+ T:11
+
+CALL C,nn
+ 00:0DCH 8:nn
+ T:17.10
+
+SBC A,n
+ 00:0DEH 8:n
+ T:7
+
+RST 24
+ 00:0DFH
+ T:11
+
+RET PO
+ 00:0E0H
+ T:11.5
+
+POP HL
+ 00:0E1H
+ T:10
+
+JP PO,nn
+ 00:0E2H 8:nn
+ T:10
+
+EX (SP),HL
+ 00:0E3H
+ T:19
+
+CALL PO,nn
+ 00:0E4H 8:nn
+ T:17.10
+
+PUSH HL
+ 00:0E5H
+ T:11
+
+AND n
+ 00:0E6H 8:n
+ T:7
+
+RST 32
+ 00:0E7H
+ T:11
+
+RET PE
+ 00:0E8H
+ T:11.5
+
+JP (HL)
+ 00:0E9H
+ T:4
+
+JP PE,nn
+ 00:0EAH 8:nn
+ T:10
+
+EX DE,HL
+ 00:0EBH
+ T:4
+
+CALL PE,nn
+ 00:0ECH 8:nn
+ T:17.10
+
+XOR n
+ 00:0EEH 8:n
+ T:7
+
+RST 40
+ 00:0EFH
+ T:11
+
+RET P
+ 00:0F0H
+ T:11.5
+
+POP AF
+ 00:0F1H
+ T:10
+
+JP P,nn
+ 00:0F2H 8:nn
+ T:10
+
+DI
+ 00:0F3H
+ T:4
+
+CALL P,nn
+ 00:0F4H 8:nn
+ T:17.10
+
+PUSH AF
+ 00:0F5H
+ T:11
+
+OR n
+ 00:0F6H 8:n
+ T:7
+
+RST 48
+ 00:0F7H
+ T:11
+
+RET M
+ 00:0F8H
+ T:11.5
+
+LD SP,HL
+ 00:0F9H
+ T:6
+
+JP M,nn
+ 00:0FAH 8:nn
+ T:10
+
+EI
+ 00:0FBH
+ T:4
+
+CALL M,nn
+ 00:0FCH 8:nn
+ T:17.10
+
+CP n
+ 00:0FEH 8:n
+ T:7
+
+RST 56
+ 00:0FFH
+ T:11
+
+RLC B
+ 00:000CBH
+ T:8
+
+RLC C
+ 00:001CBH
+ T:8
+
+RLC D
+ 00:002CBH
+ T:8
+
+RLC E
+ 00:003CBH
+ T:8
+
+RLC H
+ 00:004CBH
+ T:8
+
+RLC L
+ 00:005CBH
+ T:8
+
+RLC (HL)
+ 00:006CBH
+ T:15
+
+RLC A
+ 00:007CBH
+ T:8
+
+RRC B
+ 00:008CBH
+ T:8
+
+RRC C
+ 00:009CBH
+ T:8
+
+RRC D
+ 00:00ACBH
+ T:8
+
+RRC E
+ 00:00BCBH
+ T:8
+
+RRC H
+ 00:00CCBH
+ T:8
+
+RRC L
+ 00:00DCBH
+ T:8
+
+RRC (HL)
+ 00:00ECBH
+ T:15
+
+RRC A
+ 00:00FCBH
+ T:8
+
+RL B
+ 00:010CBH
+ T:8
+
+RL C
+ 00:011CBH
+ T:8
+
+RL D
+ 00:012CBH
+ T:8
+
+RL E
+ 00:013CBH
+ T:8
+
+RL H
+ 00:014CBH
+ T:8
+
+RL L
+ 00:015CBH
+ T:8
+
+RL (HL)
+ 00:016CBH
+ T:15
+
+RL A
+ 00:017CBH
+ T:8
+
+RR B
+ 00:018CBH
+ T:8
+
+RR C
+ 00:019CBH
+ T:8
+
+RR D
+ 00:01ACBH
+ T:8
+
+RR E
+ 00:01BCBH
+ T:8
+
+RR H
+ 00:01CCBH
+ T:8
+
+RR L
+ 00:01DCBH
+ T:8
+
+RR (HL)
+ 00:01ECBH
+ T:15
+
+RR A
+ 00:01FCBH
+ T:8
+
+SLA B
+ 00:020CBH
+ T:8
+
+SLA C
+ 00:021CBH
+ T:8
+
+SLA D
+ 00:022CBH
+ T:8
+
+SLA E
+ 00:023CBH
+ T:8
+
+SLA H
+ 00:024CBH
+ T:8
+
+SLA L
+ 00:025CBH
+ T:8
+
+SLA (HL)
+ 00:026CBH
+ T:15
+
+SLA A
+ 00:027CBH
+ T:8
+
+SRA B
+ 00:028CBH
+ T:8
+
+SRA C
+ 00:029CBH
+ T:8
+
+SRA D
+ 00:02ACBH
+ T:8
+
+SRA E
+ 00:02BCBH
+ T:8
+
+SRA H
+ 00:02CCBH
+ T:8
+
+SRA L
+ 00:02DCBH
+ T:8
+
+SRA (HL)
+ 00:02ECBH
+ T:15
+
+SRA A
+ 00:02FCBH
+ T:8
+
+SLI B
+ 00:030CBH
+ T:8
+
+SLI C
+ 00:031CBH
+ T:8
+
+SLI D
+ 00:032CBH
+ T:8
+
+SLI E
+ 00:033CBH
+ T:8
+
+SLI H
+ 00:034CBH
+ T:8
+
+SLI L
+ 00:035CBH
+ T:8
+
+SLI (HL)
+ 00:036CBH
+ T:15
+
+SLI A
+ 00:037CBH
+ T:8
+
+SRL B
+ 00:038CBH
+ T:8
+
+SRL C
+ 00:039CBH
+ T:8
+
+SRL D
+ 00:03ACBH
+ T:8
+
+SRL E
+ 00:03BCBH
+ T:8
+
+SRL H
+ 00:03CCBH
+ T:8
+
+SRL L
+ 00:03DCBH
+ T:8
+
+SRL (HL)
+ 00:03ECBH
+ T:15
+
+SRL A
+ 00:03FCBH
+ T:8
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;
+
+
+BIT m,B
+>10H:m
+ 00:040CBH 11:m.3.0
+ T:8
+
+BIT m,C
+>10H:m
+ 00:041CBH 11:m.3.0
+ T:8
+
+BIT m,D
+>10H:m
+ 00:042CBH 11:m.3.0
+ T:8
+
+BIT m,E
+>10H:m
+ 00:043CBH 11:m.3.0
+ T:8
+
+BIT m,H
+>10H:m
+ 00:044CBH 11:m.3.0
+ T:8
+
+BIT m,L
+>10H:m
+ 00:045CBH 11:m.3.0
+ T:8
+
+BIT m,(HL)
+>10H:m
+ 00:046CBH 11:m.3.0
+ T:12
+
+BIT m,A
+>10H:m
+ 00:047CBH 11:m.3.0
+ T:8
+
+
+
+RES m,B
+>10H:m
+ 00:080CBH 11:m.3.0
+ T:8
+
+RES m,C
+>10H:m
+ 00:081CBH 11:m.3.0
+ T:8
+
+RES m,D
+>10H:m
+ 00:082CBH 11:m.3.0
+ T:8
+
+RES m,E
+>10H:m
+ 00:083CBH 11:m.3.0
+ T:8
+
+RES m,H
+>10H:m
+ 00:084CBH 11:m.3.0
+ T:8
+
+RES m,L
+>10H:m
+ 00:085CBH 11:m.3.0
+ T:8
+
+RES m,(HL)
+>10H:m
+ 00:086CBH 11:m.3.0
+ T:15
+
+RES m,A
+>10H:m
+ 00:087CBH 11:m.3.0
+ T:8
+
+
+
+
+
+SET m,B
+>10H:m
+ 00:0C0CBH 11:m.3.0
+ T:8
+
+SET m,C
+>10H:m
+ 00:0C1CBH 11:m.3.0
+ T:8
+
+SET m,D
+>10H:m
+ 00:0C2CBH 11:m.3.0
+ T:8
+
+SET m,E
+>10H:m
+ 00:0C3CBH 11:m.3.0
+ T:8
+
+SET m,H
+>10H:m
+ 00:0C4CBH 11:m.3.0
+ T:8
+
+SET m,L
+>10H:m
+ 00:0C5CBH 11:m.3.0
+ T:8
+
+SET m,(HL)
+>10H:m
+ 00:0C6CBH 11:m.3.0
+ T:15
+
+SET m,A
+>10H:m
+ 00:0C7CBH 11:m.3.0
+ T:8
+
+
+
+
+
+;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+IN B,(C)
+ 00:040EDH
+ T:12
+
+OUT (C),B
+ 00:041EDH
+ T:12
+
+SBC HL,BC
+ 00:042EDH
+ T:15
+
+LD (nn),BC
+ 00:043EDH 16:nn
+ T:20
+
+NEG
+ 00:044EDH
+ T:8
+
+RETN
+ 00:045EDH
+ T:14
+
+IM 0
+ 00:046EDH
+ T:8
+
+LD I,A
+ 00:047EDH
+ T:9
+
+IN C,(C)
+ 00:048EDH
+ T:12
+
+OUT (C),C
+ 00:049EDH
+ T:12
+
+ADC HL,BC
+ 00:04AEDH
+ T:15
+
+LD BC,(nn)
+ 00:04BEDH 16:nn
+ T:20
+
+RETI
+ 00:04DEDH
+ T:14
+
+LD R,A
+ 00:04FEDH
+ T:9
+
+IN D,(C)
+ 00:050EDH
+ T:12
+
+OUT (C),D
+ 00:051EDH
+ T:12
+
+SBC HL,DE
+ 00:052EDH
+ T:15
+
+LD (nn),DE
+ 00:053EDH 16:nn
+ T:20
+
+IM 1
+ 00:056EDH
+ T:8
+
+LD A,I
+ 00:057EDH
+ T:9
+
+IN E,(C)
+ 00:058EDH
+ T:12
+
+OUT (C),E
+ 00:059EDH
+ T:12
+
+ADC HL,DE
+ 00:05AEDH
+ T:15
+
+LD DE,(nn)
+ 00:05BEDH 16:nn
+ T:20
+
+IM 2
+ 00:05EEDH
+ T:8
+
+LD A,R
+ 00:05FEDH
+ T:9
+
+IN H,(C)
+ 00:060EDH
+ T:12
+
+OUT (C),H
+ 00:061EDH
+ T:12
+
+SBC HL,HL
+ 00:062EDH
+ T:15
+
+LD (nn),HL
+ 00:063EDH 16:nn
+ T:20
+
+RRD
+ 00:067EDH
+ T:18
+
+IN L,(C)
+ 00:068EDH
+ T:12
+
+OUT (C),L
+ 00:069EDH
+ T:12
+
+ADC HL,HL
+ 00:06AEDH
+ T:15
+
+LD HL,(nn)
+ 00:06BEDH 16:nn
+ T:20
+
+RLD
+ 00:06FEDH
+ T:18
+
+IN (HL),(C)
+ 00:070EDH
+ T:12
+
+SBC HL,SP
+ 00:072EDH
+ T:15
+
+LD (nn),SP
+ 00:073EDH 16:nn
+ T:20
+
+IN A,(C)
+ 00:078EDH
+ T:12
+
+OUT (C),A
+ 00:079EDH
+ T:12
+
+ADC HL,SP
+ 00:07AEDH
+ T:15
+
+LD SP,(nn)
+ 00:07BEDH 16:nn
+ T:20
+
+LDI
+ 00:0A0EDH
+ T:16
+
+CPI
+ 00:0A1EDH
+ T:16
+
+INI
+ 00:0A2EDH
+ T:16
+
+OUTI
+ 00:0A3EDH
+ T:16
+
+LDD
+ 00:0A8EDH
+ T:16
+
+CPD
+ 00:0A9EDH
+ T:16
+
+IND
+ 00:0AAEDH
+ T:16
+
+OUTD
+ 00:0ABEDH
+ T:16
+
+LDIR
+ 00:0B0EDH
+ T:21.16
+
+CPIR
+ 00:0B1EDH
+ T:21.16
+
+INIR
+ 00:0B2EDH
+ T:21.16
+
+OTIR
+ 00:0B3EDH
+ T:21.16
+
+LDDR
+ 00:0B8EDH
+ T:21.16
+
+CPDR
+ 00:0B9EDH
+ T:21.16
+
+INDR
+ 00:0BAEDH
+ T:21.16
+
+OTDR
+ 00:0BBEDH
+ T:21.16
+
+ADD IX,BC
+ 00:009DDH
+ T:15
+
+ADD IX,DE
+ 00:019DDH
+ T:15
+
+LD IX,nn
+ 00:021DDH 16:nn
+ T:14
+
+LD (nn),IX
+ 00:022DDH 16:nn
+ T:20
+
+INC IX
+ 00:023DDH
+ T:10
+
+INC XH
+ 00:024DDH
+ T:8
+
+DEC XH
+ 00:025DDH
+ T:8
+
+LD XH,n
+ 00:026DDH 16:n
+ T:11
+
+ADD IX,IX
+ 00:029DDH
+ T:15
+
+LD IX,(nn)
+ 00:02ADDH 16:nn
+ T:20
+
+DEC IX
+ 00:02BDDH
+ T:10
+
+INC XL
+ 00:02CDDH
+ T:8
+
+DEC XL
+ 00:02DDDH
+ T:8
+
+LD XL,n
+ 00:02EDDH 16:n
+ T:11
+
+INC (IX+s)
+>08H:s
+ 00:034DDH 16:s
+ T:23
+
+INC (IX)
+ 00:034DDH 16:00
+ T:23
+
+DEC (IX+s)
+>08H:s
+ 00:035DDH 16:s
+ T:23
+
+DEC (IX)
+ 00:035DDH 16:00
+ T:23
+
+LD (IX+s),n
+>08H:s
+ 00:036DDH 16:s 24:n
+ T:26
+
+LD (IX),n
+ 00:036DDH 16:00 24:n
+ T:26
+
+ADD IX,SP
+ 00:039DDH
+ T:15
+
+LD B,XH
+ 00:044DDH
+ T:8
+
+LD B,XL
+ 00:045DDH
+ T:8
+
+LD B,(IX+s)
+>08H:s
+ 00:046DDH 16:s
+ T:19
+
+LD B,(IX)
+ 00:046DDH 16:00
+ T:19
+
+LD C,XH
+ 00:04CDDH
+ T:8
+
+LD C,XL
+ 00:04DDDH
+ T:8
+
+LD C,(IX+s)
+>08H:s
+ 00:04EDDH 16:s
+ T:19
+
+LD C,(IX)
+ 00:04EDDH 16:00
+ T:19
+
+LD D,XH
+ 00:054DDH
+ T:8
+
+LD D,XL
+ 00:055DDH
+ T:8
+
+LD D,(IX+s)
+>08H:s
+ 00:056DDH 16:s
+ T:19
+
+LD D,(IX)
+ 00:056DDH 16:00
+ T:19
+
+LD E,XH
+ 00:05CDDH
+ T:8
+
+LD E,XL
+ 00:05DDDH
+ T:8
+
+LD E,(IX+s)
+>08H:s
+ 00:05EDDH 16:s
+ T:19
+
+LD E,(IX)
+ 00:05EDDH 16:00
+ T:19
+
+LD XH,B
+ 00:060DDH
+ T:8
+
+LD XH,C
+ 00:061DDH
+ T:8
+
+LD XH,D
+ 00:062DDH
+ T:8
+
+LD XH,E
+ 00:063DDH
+ T:8
+
+LD XH,XH
+ 00:064DDH
+ T:8
+
+LD XH,XL
+ 00:065DDH
+ T:8
+
+LD H,(IX+s)
+>08H:s
+ 00:066DDH 16:s
+ T:19
+
+LD H,(IX)
+ 00:066DDH 16:00
+ T:19
+
+LD XH,A
+ 00:067DDH
+ T:8
+
+LD XL,B
+ 00:068DDH
+ T:8
+
+LD XL,C
+ 00:069DDH
+ T:8
+
+LD XL,D
+ 00:06ADDH
+ T:8
+
+LD XL,E
+ 00:06BDDH
+ T:8
+
+LD XL,XH
+ 00:06CDDH
+ T:8
+
+LD XL,XL
+ 00:06DDDH
+ T:8
+
+LD L,(IX+s)
+>08H:s
+ 00:06EDDH 16:s
+ T:19
+
+LD L,(IX)
+ 00:06EDDH 16:00
+ T:19
+
+LD XL,A
+ 00:06FDDH
+ T:8
+
+LD (IX+s),B
+>08H:s
+ 00:070DDH 16:s
+ T:19
+
+LD (IX+s),C
+>08H:s
+ 00:071DDH 16:s
+ T:19
+
+LD (IX+s),D
+>08H:s
+ 00:072DDH 16:s
+ T:19
+
+LD (IX+s),E
+>08H:s
+ 00:073DDH 16:s
+ T:19
+
+LD (IX+s),H
+>08H:s
+ 00:074DDH 16:s
+ T:19
+
+LD (IX+s),L
+>08H:s
+ 00:075DDH 16:s
+ T:19
+
+LD (IX+s),A
+>08H:s
+ 00:077DDH 16:s
+ T:19
+
+LD (IX),B
+ 00:070DDH 16:00
+ T:19
+
+LD (IX),C
+ 00:071DDH 16:00
+ T:19
+
+LD (IX),D
+ 00:072DDH 16:00
+ T:19
+
+LD (IX),E
+ 00:073DDH 16:00
+ T:19
+
+LD (IX),H
+ 00:074DDH 16:00
+ T:19
+
+LD (IX),L
+ 00:075DDH 16:00
+ T:19
+
+LD (IX),A
+ 00:077DDH 16:00
+ T:19
+
+LD A,XH
+ 00:07CDDH
+ T:8
+
+LD A,XL
+ 00:07DDDH
+ T:8
+
+LD A,(IX+s)
+>08H:s
+ 00:07EDDH 16:s
+ T:19
+
+LD A,(IX)
+ 00:07EDDH 16:00
+ T:19
+
+ADD A,XH
+ 00:084DDH
+ T:8
+
+ADD A,XL
+ 00:085DDH
+ T:8
+
+ADD A,(IX+s)
+>08H:s
+ 00:086DDH 16:s
+ T:19
+
+ADD A,(IX)
+ 00:086DDH 16:00
+ T:19
+
+ADC A,XH
+ 00:08CDDH
+ T:8
+
+ADC A,XL
+ 00:08DDDH
+ T:8
+
+ADC A,(IX+s)
+>08H:s
+ 00:08EDDH 16:s
+ T:19
+
+ADC A,(IX)
+ 00:08EDDH 16:00
+ T:19
+
+SUB XH
+ 00:094DDH
+ T:8
+
+SUB XL
+ 00:095DDH
+ T:8
+
+SUB (IX+s)
+>08H:s
+ 00:096DDH 16:s
+ T:19
+
+SUB (IX)
+ 00:096DDH 16:00
+ T:19
+
+SBC A,XH
+ 00:09CDDH
+ T:8
+
+SBC A,XL
+ 00:09DDDH
+ T:8
+
+SBC A,(IX+s)
+>08H:s
+ 00:09EDDH 16:s
+ T:19
+
+SBC A,(IX)
+ 00:09EDDH 16:00
+ T:19
+
+AND XH
+ 00:0A4DDH
+ T:8
+
+AND XL
+ 00:0A5DDH
+ T:8
+
+AND (IX+s)
+>08H:s
+ 00:0A6DDH 16:s
+ T:19
+
+AND (IX)
+ 00:0A6DDH 16:00
+ T:19
+
+XOR XH
+ 00:0ACDDH
+ T:8
+
+XOR XL
+ 00:0ADDDH
+ T:8
+
+XOR (IX+s)
+>08H:s
+ 00:0AEDDH 16:s
+ T:19
+
+XOR (IX)
+ 00:0AEDDH 16:00
+ T:19
+
+OR XH
+ 00:0B4DDH
+ T:8
+
+OR XL
+ 00:0B5DDH
+ T:8
+
+OR (IX+s)
+>08H:s
+ 00:0B6DDH 16:s
+ T:19
+
+OR (IX)
+ 00:0B6DDH 16:00
+ T:19
+
+CP XH
+ 00:0BCDDH
+ T:8
+
+CP XL
+ 00:0BDDDH
+ T:8
+
+CP (IX+s)
+>08H:s
+ 00:0BEDDH 16:s
+ T:19
+
+CP (IX)
+ 00:0BEDDH 16:00
+ T:19
+
+POP IX
+ 00:0E1DDH
+ T:14
+
+EX (SP),IX
+ 00:0E3DDH
+ T:23
+
+PUSH IX
+ 00:0E5DDH
+ T:15
+
+JP (IX)
+ 00:0E9DDH
+ T:8
+
+LD SP,IX
+ 00:0F9DDH
+ T:10
+
+ADD IY,BC
+ 00:009FDH
+ T:15
+
+ADD IY,DE
+ 00:019FDH
+ T:15
+
+LD IY,nn
+ 00:021FDH 16:nn
+ T:14
+
+LD (nn),IY
+ 00:022FDH 16:nn
+ T:20
+
+INC IY
+ 00:023FDH
+ T:10
+
+INC YH
+ 00:024FDH
+ T:8
+
+DEC YH
+ 00:025FDH
+ T:8
+
+LD YH,n
+ 00:026FDH 16:n
+ T:11
+
+ADD IY,IY
+ 00:029FDH
+ T:15
+
+LD IY,(nn)
+ 00:02AFDH 16:nn
+ T:20
+
+DEC IY
+ 00:02BFDH
+ T:10
+
+INC YL
+ 00:02CFDH
+ T:8
+
+DEC YL
+ 00:02DFDH
+ T:8
+
+LD YL,n
+ 00:02EFDH 16:n
+ T:11
+
+INC (IY+s)
+>08H:s
+ 00:034FDH 16:s
+ T:23
+
+DEC (IY+s)
+>08H:s
+ 00:035FDH 16:s
+ T:23
+
+LD (IY+s),n
+>08H:s
+ 00:036FDH 16:s 24:n
+ T:26
+
+INC (IY)
+ 00:034FDH 16:00
+ T:23
+
+DEC (IY)
+ 00:035FDH 16:00
+ T:23
+
+LD (IY),n
+ 00:036FDH 16:00 24:n
+ T:26
+
+ADD IY,SP
+ 00:039FDH
+ T:15
+
+LD B,YH
+ 00:044FDH
+ T:8
+
+LD B,YL
+ 00:045FDH
+ T:8
+
+LD B,(IY+s)
+>08H:s
+ 00:046FDH 16:s
+ T:19
+
+LD B,(IY)
+ 00:046FDH 16:00
+ T:19
+
+LD C,YH
+ 00:04CFDH
+ T:8
+
+LD C,YL
+ 00:04DFDH
+ T:8
+
+LD C,(IY+s)
+>08H:s
+ 00:04EFDH 16:s
+ T:19
+
+LD C,(IY)
+ 00:04EFDH 16:00
+ T:19
+
+LD D,YH
+ 00:054FDH
+ T:8
+
+LD D,YL
+ 00:055FDH
+ T:8
+
+LD D,(IY+s)
+>08H:s
+ 00:056FDH 16:s
+ T:19
+
+LD D,(IY)
+ 00:056FDH 16:00
+ T:19
+
+LD E,YH
+ 00:05CFDH
+ T:8
+
+LD E,YL
+ 00:05DFDH
+ T:8
+
+LD E,(IY+s)
+>08H:s
+ 00:05EFDH 16:s
+ T:19
+
+LD E,(IY)
+ 00:05EFDH 16:00
+ T:19
+
+LD YH,B
+ 00:060FDH
+ T:8
+
+LD YH,C
+ 00:061FDH
+ T:8
+
+LD YH,D
+ 00:062FDH
+ T:8
+
+LD YH,E
+ 00:063FDH
+ T:8
+
+LD YH,YH
+ 00:064FDH
+ T:8
+
+LD YH,YL
+ 00:065FDH
+ T:8
+
+LD H,(IY+s)
+>08H:s
+ 00:066FDH 16:s
+ T:19
+
+LD H,(IY)
+ 00:066FDH 16:00
+ T:19
+
+LD YH,A
+ 00:067FDH
+ T:8
+
+LD YL,B
+ 00:068FDH
+ T:8
+
+LD YL,C
+ 00:069FDH
+ T:8
+
+LD YL,D
+ 00:06AFDH
+ T:8
+
+LD YL,E
+ 00:06BFDH
+ T:8
+
+LD YL,YH
+ 00:06CFDH
+ T:8
+
+LD YL,YL
+ 00:06DFDH
+ T:8
+
+LD L,(IY+s)
+>08H:s
+ 00:06EFDH 16:s
+ T:19
+
+LD L,(IY)
+ 00:06EFDH 16:00
+ T:19
+
+LD YL,A
+ 00:06FFDH
+ T:8
+
+LD (IY+s),B
+>08H:s
+ 00:070FDH 16:s
+ T:19
+
+LD (IY+s),C
+>08H:s
+ 00:071FDH 16:s
+ T:19
+
+LD (IY+s),D
+>08H:s
+ 00:072FDH 16:s
+ T:19
+
+LD (IY+s),E
+>08H:s
+ 00:073FDH 16:s
+ T:19
+
+LD (IY+s),H
+>08H:s
+ 00:074FDH 16:s
+ T:19
+
+LD (IY+s),L
+>08H:s
+ 00:075FDH 16:s
+ T:19
+
+LD (IY+s),A
+>08H:s
+ 00:077FDH 16:s
+ T:19
+
+LD (IY),B
+ 00:070FDH 16:00
+ T:19
+
+LD (IY),C
+ 00:071FDH 16:00
+ T:19
+
+LD (IY),D
+ 00:072FDH 16:00
+ T:19
+
+LD (IY),E
+ 00:073FDH 16:00
+ T:19
+
+LD (IY),H
+ 00:074FDH 16:00
+ T:19
+
+LD (IY),L
+ 00:075FDH 16:00
+ T:19
+
+LD (IY),A
+ 00:077FDH 16:00
+ T:19
+
+LD A,YH
+ 00:07CFDH
+ T:8
+
+LD A,YL
+ 00:07DFDH
+ T:8
+
+LD A,(IY)
+ 00:07EFDH 16:00
+ T:19
+
+LD A,(IY+s)
+>08H:s
+ 00:07EFDH 16:s
+ T:19
+
+LD A,(IY)
+ 00:07EFDH 16:00
+ T:19
+
+ADD A,YH
+ 00:084FDH
+ T:8
+
+ADD A,YL
+ 00:085FDH
+ T:8
+
+ADD A,(IY+s)
+>08H:s
+ 00:086FDH 16:s
+ T:19
+
+ADD A,(IY)
+ 00:086FDH 16:00
+ T:19
+
+ADC A,YH
+ 00:08CFDH
+ T:8
+
+ADC A,YL
+ 00:08DFDH
+ T:8
+
+ADC A,(IY+s)
+>08H:s
+ 00:08EFDH 16:s
+ T:19
+
+ADC A,(IY)
+ 00:08EFDH 16:00
+ T:19
+
+SUB YH
+ 00:094FDH
+ T:8
+
+SUB YL
+ 00:095FDH
+ T:8
+
+SUB (IY+s)
+>08H:s
+ 00:096FDH 16:s
+ T:19
+
+SUB (IY)
+ 00:096FDH 16:00
+ T:19
+
+SBC A,YH
+ 00:09CFDH
+ T:8
+
+SBC A,YL
+ 00:09DFDH
+ T:8
+
+SBC A,(IY+s)
+>08H:s
+ 00:09EFDH 16:s
+ T:19
+
+SBC A,(IY)
+ 00:09EFDH 16:00
+ T:19
+
+AND YH
+ 00:0A4FDH
+ T:8
+
+AND YL
+ 00:0A5FDH
+ T:8
+
+AND (IY+s)
+>08H:s
+ 00:0A6FDH 16:s
+ T:19
+
+AND (IY)
+ 00:0A6FDH 16:00
+ T:19
+
+XOR YH
+ 00:0ACFDH
+ T:8
+
+XOR YL
+ 00:0ADFDH
+ T:8
+
+XOR (IY+s)
+>08H:s
+ 00:0AEFDH 16:s
+ T:19
+
+XOR (IY)
+ 00:0AEFDH 16:00
+ T:19
+
+OR YH
+ 00:0B4FDH
+ T:8
+
+OR YL
+ 00:0B5FDH
+ T:8
+
+OR (IY+s)
+>08H:s
+ 00:0B6FDH 16:s
+ T:19
+
+OR (IY)
+ 00:0B6FDH 16:00
+ T:19
+
+CP YH
+ 00:0BCFDH
+ T:8
+
+CP YL
+ 00:0BDFDH
+ T:8
+
+CP (IY+s)
+>08H:s
+ 00:0BEFDH 16:s
+ T:19
+
+CP (IY)
+ 00:0BEFDH 16:00
+ T:19
+
+POP IY
+ 00:0E1FDH
+ T:14
+
+EX (SP),IY
+ 00:0E3FDH
+ T:23
+
+PUSH IY
+ 00:0E5FDH
+ T:15
+
+JP (IY)
+ 00:0E9FDH
+ T:8
+
+LD SP,IY
+ 00:0F9FDH
+ T:10
+
+RLC B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:000H
+ T:23
+
+RLC C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:001H
+ T:23
+
+RLC D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:002H
+ T:23
+
+RLC E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:003H
+ T:23
+
+RLC H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:004H
+ T:23
+
+RLC L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:005H
+ T:23
+
+RLC (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:006H
+ T:23
+
+RLC A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:007H
+ T:23
+
+RRC B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:008H
+ T:23
+
+RRC C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:009H
+ T:23
+
+RRC D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00AH
+ T:23
+
+RRC E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00BH
+ T:23
+
+RRC H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00CH
+ T:23
+
+RRC L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00DH
+ T:23
+
+RRC (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00EH
+ T:23
+
+RRC A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:00FH
+ T:23
+
+RL B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:010H
+ T:23
+
+RL C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:011H
+ T:23
+
+RL D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:012H
+ T:23
+
+RL E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:013H
+ T:23
+
+RL H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:014H
+ T:23
+
+RL L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:015H
+ T:23
+
+RL (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:016H
+ T:23
+
+RL A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:017H
+ T:23
+
+RR B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:018H
+ T:23
+
+RR C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:019H
+ T:23
+
+RR D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01AH
+ T:23
+
+RR E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01BH
+ T:23
+
+RR H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01CH
+ T:23
+
+RR L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01DH
+ T:23
+
+RR (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01EH
+ T:23
+
+RR A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:01FH
+ T:23
+
+SLA B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:020H
+ T:23
+
+SLA C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:021H
+ T:23
+
+SLA D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:022H
+ T:23
+
+SLA E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:023H
+ T:23
+
+SLA H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:024H
+ T:23
+
+SLA L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:025H
+ T:23
+
+SLA (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:026H
+ T:23
+
+SLA A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:027H
+ T:23
+
+SRA B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:028H
+ T:23
+
+SRA C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:029H
+ T:23
+
+SRA D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02AH
+ T:23
+
+SRA E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02BH
+ T:23
+
+SRA H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02CH
+ T:23
+
+SRA L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02DH
+ T:23
+
+SRA (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02EH
+ T:23
+
+SRA A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:02FH
+ T:23
+
+SLI B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:030H
+ T:23
+
+SLI C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:031H
+ T:23
+
+SLI D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:032H
+ T:23
+
+SLI E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:033H
+ T:23
+
+SLI H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:034H
+ T:23
+
+SLI L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:035H
+ T:23
+
+SLI (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:036H
+ T:23
+
+SLI A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:037H
+ T:23
+
+SRL B,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:038H
+ T:23
+
+SRL C,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:039H
+ T:23
+
+SRL D,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03AH
+ T:23
+
+SRL E,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03BH
+ T:23
+
+SRL H,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03CH
+ T:23
+
+SRL L,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03DH
+ T:23
+
+SRL (IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03EH
+ T:23
+
+SRL A,(IX+s)
+>08H:s
+ 00:0CBDDH 16:s 24:03FH
+ T:23
+
+RLC B,(IX)
+ 00:0CBDDH 16:00 24:000H
+ T:23
+
+RLC C,(IX)
+ 00:0CBDDH 16:00 24:001H
+ T:23
+
+RLC D,(IX)
+ 00:0CBDDH 16:00 24:002H
+ T:23
+
+RLC E,(IX)
+ 00:0CBDDH 16:00 24:003H
+ T:23
+
+RLC H,(IX)
+ 00:0CBDDH 16:00 24:004H
+ T:23
+
+RLC L,(IX)
+ 00:0CBDDH 16:00 24:005H
+ T:23
+
+RLC (IX)
+ 00:0CBDDH 16:00 24:006H
+ T:23
+
+RLC A,(IX)
+ 00:0CBDDH 16:00 24:007H
+ T:23
+
+RRC B,(IX)
+ 00:0CBDDH 16:00 24:008H
+ T:23
+
+RRC C,(IX)
+ 00:0CBDDH 16:00 24:009H
+ T:23
+
+RRC D,(IX)
+ 00:0CBDDH 16:00 24:00AH
+ T:23
+
+RRC E,(IX)
+ 00:0CBDDH 16:00 24:00BH
+ T:23
+
+RRC H,(IX)
+ 00:0CBDDH 16:00 24:00CH
+ T:23
+
+RRC L,(IX)
+ 00:0CBDDH 16:00 24:00DH
+ T:23
+
+RRC (IX)
+ 00:0CBDDH 16:00 24:00EH
+ T:23
+
+RRC A,(IX)
+ 00:0CBDDH 16:00 24:00FH
+ T:23
+
+RL B,(IX)
+ 00:0CBDDH 16:00 24:010H
+ T:23
+
+RL C,(IX)
+ 00:0CBDDH 16:00 24:011H
+ T:23
+
+RL D,(IX)
+ 00:0CBDDH 16:00 24:012H
+ T:23
+
+RL E,(IX)
+ 00:0CBDDH 16:00 24:013H
+ T:23
+
+RL H,(IX)
+ 00:0CBDDH 16:00 24:014H
+ T:23
+
+RL L,(IX)
+ 00:0CBDDH 16:00 24:015H
+ T:23
+
+RL (IX)
+ 00:0CBDDH 16:00 24:016H
+ T:23
+
+RL A,(IX)
+ 00:0CBDDH 16:00 24:017H
+ T:23
+
+RR B,(IX)
+ 00:0CBDDH 16:00 24:018H
+ T:23
+
+RR C,(IX)
+ 00:0CBDDH 16:00 24:019H
+ T:23
+
+RR D,(IX)
+ 00:0CBDDH 16:00 24:01AH
+ T:23
+
+RR E,(IX)
+ 00:0CBDDH 16:00 24:01BH
+ T:23
+
+RR H,(IX)
+ 00:0CBDDH 16:00 24:01CH
+ T:23
+
+RR L,(IX)
+ 00:0CBDDH 16:00 24:01DH
+ T:23
+
+RR (IX)
+ 00:0CBDDH 16:00 24:01EH
+ T:23
+
+RR A,(IX)
+ 00:0CBDDH 16:00 24:01FH
+ T:23
+
+SLA B,(IX)
+ 00:0CBDDH 16:00 24:020H
+ T:23
+
+SLA C,(IX)
+ 00:0CBDDH 16:00 24:021H
+ T:23
+
+SLA D,(IX)
+ 00:0CBDDH 16:00 24:022H
+ T:23
+
+SLA E,(IX)
+ 00:0CBDDH 16:00 24:023H
+ T:23
+
+SLA H,(IX)
+ 00:0CBDDH 16:00 24:024H
+ T:23
+
+SLA L,(IX)
+ 00:0CBDDH 16:00 24:025H
+ T:23
+
+SLA (IX)
+ 00:0CBDDH 16:00 24:026H
+ T:23
+
+SLA A,(IX)
+ 00:0CBDDH 16:00 24:027H
+ T:23
+
+SRA B,(IX)
+ 00:0CBDDH 16:00 24:028H
+ T:23
+
+SRA C,(IX)
+ 00:0CBDDH 16:00 24:029H
+ T:23
+
+SRA D,(IX)
+ 00:0CBDDH 16:00 24:02AH
+ T:23
+
+SRA E,(IX)
+ 00:0CBDDH 16:00 24:02BH
+ T:23
+
+SRA H,(IX)
+ 00:0CBDDH 16:00 24:02CH
+ T:23
+
+SRA L,(IX)
+ 00:0CBDDH 16:00 24:02DH
+ T:23
+
+SRA (IX)
+ 00:0CBDDH 16:00 24:02EH
+ T:23
+
+SRA A,(IX)
+ 00:0CBDDH 16:00 24:02FH
+ T:23
+
+SLI B,(IX)
+ 00:0CBDDH 16:00 24:030H
+ T:23
+
+SLI C,(IX)
+ 00:0CBDDH 16:00 24:031H
+ T:23
+
+SLI D,(IX)
+ 00:0CBDDH 16:00 24:032H
+ T:23
+
+SLI E,(IX)
+ 00:0CBDDH 16:00 24:033H
+ T:23
+
+SLI H,(IX)
+ 00:0CBDDH 16:00 24:034H
+ T:23
+
+SLI L,(IX)
+ 00:0CBDDH 16:00 24:035H
+ T:23
+
+SLI (IX)
+ 00:0CBDDH 16:00 24:036H
+ T:23
+
+SLI A,(IX)
+ 00:0CBDDH 16:00 24:037H
+ T:23
+
+SRL B,(IX)
+ 00:0CBDDH 16:00 24:038H
+ T:23
+
+SRL C,(IX)
+ 00:0CBDDH 16:00 24:039H
+ T:23
+
+SRL D,(IX)
+ 00:0CBDDH 16:00 24:03AH
+ T:23
+
+SRL E,(IX)
+ 00:0CBDDH 16:00 24:03BH
+ T:23
+
+SRL H,(IX)
+ 00:0CBDDH 16:00 24:03CH
+ T:23
+
+SRL L,(IX)
+ 00:0CBDDH 16:00 24:03DH
+ T:23
+
+SRL (IX)
+ 00:0CBDDH 16:00 24:03EH
+ T:23
+
+SRL A,(IX)
+ 00:0CBDDH 16:00 24:03FH
+ T:23
+
+
+
+
+
+
+RLC B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:000H
+ T:23
+
+RLC C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:001H
+ T:23
+
+RLC D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:002H
+ T:23
+
+RLC E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:003H
+ T:23
+
+RLC H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:004H
+ T:23
+
+RLC L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:005H
+ T:23
+
+RLC (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:006H
+ T:23
+
+RLC A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:007H
+ T:23
+
+RRC B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:008H
+ T:23
+
+RRC C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:009H
+ T:23
+
+RRC D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00AH
+ T:23
+
+RRC E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00BH
+ T:23
+
+RRC H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00CH
+ T:23
+
+RRC L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00DH
+ T:23
+
+RRC (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00EH
+ T:23
+
+RRC A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:00FH
+ T:23
+
+RL B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:010H
+ T:23
+
+RL C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:011H
+ T:23
+
+RL D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:012H
+ T:23
+
+RL E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:013H
+ T:23
+
+RL H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:014H
+ T:23
+
+RL L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:015H
+ T:23
+
+RL (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:016H
+ T:23
+
+RL A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:017H
+ T:23
+
+RR B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:018H
+ T:23
+
+RR C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:019H
+ T:23
+
+RR D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01AH
+ T:23
+
+RR E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01BH
+ T:23
+
+RR H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01CH
+ T:23
+
+RR L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01DH
+ T:23
+
+RR (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01EH
+ T:23
+
+RR A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:01FH
+ T:23
+
+SLA B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:020H
+ T:23
+
+SLA C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:021H
+ T:23
+
+SLA D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:022H
+ T:23
+
+SLA E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:023H
+ T:23
+
+SLA H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:024H
+ T:23
+
+SLA L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:025H
+ T:23
+
+SLA (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:026H
+ T:23
+
+SLA A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:027H
+ T:23
+
+SRA B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:028H
+ T:23
+
+SRA C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:029H
+ T:23
+
+SRA D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02AH
+ T:23
+
+SRA E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02BH
+ T:23
+
+SRA H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02CH
+ T:23
+
+SRA L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02DH
+ T:23
+
+SRA (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02EH
+ T:23
+
+SRA A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:02FH
+ T:23
+
+SLI B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:030H
+ T:23
+
+SLI C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:031H
+ T:23
+
+SLI D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:032H
+ T:23
+
+SLI E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:033H
+ T:23
+
+SLI H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:034H
+ T:23
+
+SLI L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:035H
+ T:23
+
+SLI (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:036H
+ T:23
+
+SLI A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:037H
+ T:23
+
+SRL B,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:038H
+ T:23
+
+SRL C,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:039H
+ T:23
+
+SRL D,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03AH
+ T:23
+
+SRL E,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03BH
+ T:23
+
+SRL H,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03CH
+ T:23
+
+SRL L,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03DH
+ T:23
+
+SRL (IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03EH
+ T:23
+
+SRL A,(IY+s)
+>08H:s
+ 00:0CBFDH 16:s 24:03FH
+ T:23
+
+RLC B,(IY)
+ 00:0CBFDH 16:00 24:000H
+ T:23
+
+RLC C,(IY)
+ 00:0CBFDH 16:00 24:001H
+ T:23
+
+RLC D,(IY)
+ 00:0CBFDH 16:00 24:002H
+ T:23
+
+RLC E,(IY)
+ 00:0CBFDH 16:00 24:003H
+ T:23
+
+RLC H,(IY)
+ 00:0CBFDH 16:00 24:004H
+ T:23
+
+RLC L,(IY)
+ 00:0CBFDH 16:00 24:005H
+ T:23
+
+RLC (IY)
+ 00:0CBFDH 16:00 24:006H
+ T:23
+
+RLC A,(IY)
+ 00:0CBFDH 16:00 24:007H
+ T:23
+
+RRC B,(IY)
+ 00:0CBFDH 16:00 24:008H
+ T:23
+
+RRC C,(IY)
+ 00:0CBFDH 16:00 24:009H
+ T:23
+
+RRC D,(IY)
+ 00:0CBFDH 16:00 24:00AH
+ T:23
+
+RRC E,(IY)
+ 00:0CBFDH 16:00 24:00BH
+ T:23
+
+RRC H,(IY)
+ 00:0CBFDH 16:00 24:00CH
+ T:23
+
+RRC L,(IY)
+ 00:0CBFDH 16:00 24:00DH
+ T:23
+
+RRC (IY)
+ 00:0CBFDH 16:00 24:00EH
+ T:23
+
+RRC A,(IY)
+ 00:0CBFDH 16:00 24:00FH
+ T:23
+
+RL B,(IY)
+ 00:0CBFDH 16:00 24:010H
+ T:23
+
+RL C,(IY)
+ 00:0CBFDH 16:00 24:011H
+ T:23
+
+RL D,(IY)
+ 00:0CBFDH 16:00 24:012H
+ T:23
+
+RL E,(IY)
+ 00:0CBFDH 16:00 24:013H
+ T:23
+
+RL H,(IY)
+ 00:0CBFDH 16:00 24:014H
+ T:23
+
+RL L,(IY)
+ 00:0CBFDH 16:00 24:015H
+ T:23
+
+RL (IY)
+ 00:0CBFDH 16:00 24:016H
+ T:23
+
+RL A,(IY)
+ 00:0CBFDH 16:00 24:017H
+ T:23
+
+RR B,(IY)
+ 00:0CBFDH 16:00 24:018H
+ T:23
+
+RR C,(IY)
+ 00:0CBFDH 16:00 24:019H
+ T:23
+
+RR D,(IY)
+ 00:0CBFDH 16:00 24:01AH
+ T:23
+
+RR E,(IY)
+ 00:0CBFDH 16:00 24:01BH
+ T:23
+
+RR H,(IY)
+ 00:0CBFDH 16:00 24:01CH
+ T:23
+
+RR L,(IY)
+ 00:0CBFDH 16:00 24:01DH
+ T:23
+
+RR (IY)
+ 00:0CBFDH 16:00 24:01EH
+ T:23
+
+RR A,(IY)
+ 00:0CBFDH 16:00 24:01FH
+ T:23
+
+SLA B,(IY)
+ 00:0CBFDH 16:00 24:020H
+ T:23
+
+SLA C,(IY)
+ 00:0CBFDH 16:00 24:021H
+ T:23
+
+SLA D,(IY)
+ 00:0CBFDH 16:00 24:022H
+ T:23
+
+SLA E,(IY)
+ 00:0CBFDH 16:00 24:023H
+ T:23
+
+SLA H,(IY)
+ 00:0CBFDH 16:00 24:024H
+ T:23
+
+SLA L,(IY)
+ 00:0CBFDH 16:00 24:025H
+ T:23
+
+SLA (IY)
+ 00:0CBFDH 16:00 24:026H
+ T:23
+
+SLA A,(IY)
+ 00:0CBFDH 16:00 24:027H
+ T:23
+
+SRA B,(IY)
+ 00:0CBFDH 16:00 24:028H
+ T:23
+
+SRA C,(IY)
+ 00:0CBFDH 16:00 24:029H
+ T:23
+
+SRA D,(IY)
+ 00:0CBFDH 16:00 24:02AH
+ T:23
+
+SRA E,(IY)
+ 00:0CBFDH 16:00 24:02BH
+ T:23
+
+SRA H,(IY)
+ 00:0CBFDH 16:00 24:02CH
+ T:23
+
+SRA L,(IY)
+ 00:0CBFDH 16:00 24:02DH
+ T:23
+
+SRA (IY)
+ 00:0CBFDH 16:00 24:02EH
+ T:23
+
+SRA A,(IY)
+ 00:0CBFDH 16:00 24:02FH
+ T:23
+
+SLI B,(IY)
+ 00:0CBFDH 16:00 24:030H
+ T:23
+
+SLI C,(IY)
+ 00:0CBFDH 16:00 24:031H
+ T:23
+
+SLI D,(IY)
+ 00:0CBFDH 16:00 24:032H
+ T:23
+
+SLI E,(IY)
+ 00:0CBFDH 16:00 24:033H
+ T:23
+
+SLI H,(IY)
+ 00:0CBFDH 16:00 24:034H
+ T:23
+
+SLI L,(IY)
+ 00:0CBFDH 16:00 24:035H
+ T:23
+
+SLI (IY)
+ 00:0CBFDH 16:00 24:036H
+ T:23
+
+SLI A,(IY)
+ 00:0CBFDH 16:00 24:037H
+ T:23
+
+SRL B,(IY)
+ 00:0CBFDH 16:00 24:038H
+ T:23
+
+SRL C,(IY)
+ 00:0CBFDH 16:00 24:039H
+ T:23
+
+SRL D,(IY)
+ 00:0CBFDH 16:00 24:03AH
+ T:23
+
+SRL E,(IY)
+ 00:0CBFDH 16:00 24:03BH
+ T:23
+
+SRL H,(IY)
+ 00:0CBFDH 16:00 24:03CH
+ T:23
+
+SRL L,(IY)
+ 00:0CBFDH 16:00 24:03DH
+ T:23
+
+SRL (IY)
+ 00:0CBFDH 16:00 24:03EH
+ T:23
+
+SRL A,(IY)
+ 00:0CBFDH 16:00 24:03FH
+ T:23
+
+
+
+
+
+
+
+
+
+
+; New Version
+
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:040H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:041H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:042H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:043H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:044H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:045H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:046H 27:m.3.0
+ T:20
+
+BIT m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:047H 27:m.3.0
+ T:20
+
+
+
+
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:040H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:041H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:042H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:043H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:044H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:045H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:046H 27:m.3.0
+ T:20
+
+BIT m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:047H 27:m.3.0
+ T:20
+
+
+
+
+
+
+
+
+
+
+
+
+RES m,B,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:080H 27:m.3.0
+ T:23
+
+RES m,C,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:081H 27:m.3.0
+ T:23
+
+RES m,D,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:082H 27:m.3.0
+ T:23
+
+RES m,E,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:083H 27:m.3.0
+ T:23
+
+RES m,H,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:084H 27:m.3.0
+ T:23
+
+RES m,L,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:085H 27:m.3.0
+ T:23
+
+RES m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:086H 27:m.3.0
+ T:23
+
+RES m,A,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:087H 27:m.3.0
+ T:23
+
+
+
+
+
+RES m,B,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:080H 27:m.3.0
+ T:23
+
+RES m,C,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:081H 27:m.3.0
+ T:23
+
+RES m,D,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:082H 27:m.3.0
+ T:23
+
+RES m,E,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:083H 27:m.3.0
+ T:23
+
+RES m,H,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:084H 27:m.3.0
+ T:23
+
+RES m,L,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:085H 27:m.3.0
+ T:23
+
+RES m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:086H 27:m.3.0
+ T:23
+
+RES m,A,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:087H 27:m.3.0
+ T:23
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SET m,B,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C0H 27:m.3.0
+ T:23
+
+SET m,C,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C1H 27:m.3.0
+ T:23
+
+SET m,D,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C2H 27:m.3.0
+ T:23
+
+SET m,E,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C3H 27:m.3.0
+ T:23
+
+SET m,H,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C4H 27:m.3.0
+ T:23
+
+SET m,L,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C5H 27:m.3.0
+ T:23
+
+SET m,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C6H 27:m.3.0
+ T:23
+
+SET m,A,(IX+s)
+>08H:s 10H:m
+ 00:0CBDDH 16:s 24:0C7H 27:m.3.0
+ T:23
+
+
+
+SET m,B,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C0H 27:m.3.0
+ T:23
+
+SET m,C,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C1H 27:m.3.0
+ T:23
+
+SET m,D,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C2H 27:m.3.0
+ T:23
+
+SET m,E,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C3H 27:m.3.0
+ T:23
+
+SET m,H,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C4H 27:m.3.0
+ T:23
+
+SET m,L,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C5H 27:m.3.0
+ T:23
+
+SET m,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C6H 27:m.3.0
+ T:23
+
+SET m,A,(IY+s)
+>08H:s 10H:m
+ 00:0CBFDH 16:s 24:0C7H 27:m.3.0
+ T:23
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:040H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:041H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:042H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:043H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:044H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:045H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:046H 27:m.3.0
+ T:20
+
+BIT m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:047H 27:m.3.0
+ T:20
+
+
+
+
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:040H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:041H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:042H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:043H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:044H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:045H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:046H 27:m.3.0
+ T:20
+
+BIT m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:047H 27:m.3.0
+ T:20
+
+
+
+
+
+
+
+
+
+
+
+
+RES m,B,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:080H 27:m.3.0
+ T:23
+
+RES m,C,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:081H 27:m.3.0
+ T:23
+
+RES m,D,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:082H 27:m.3.0
+ T:23
+
+RES m,E,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:083H 27:m.3.0
+ T:23
+
+RES m,H,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:084H 27:m.3.0
+ T:23
+
+RES m,L,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:085H 27:m.3.0
+ T:23
+
+RES m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:086H 27:m.3.0
+ T:23
+
+RES m,A,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:087H 27:m.3.0
+ T:23
+
+
+
+
+
+RES m,B,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:080H 27:m.3.0
+ T:23
+
+RES m,C,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:081H 27:m.3.0
+ T:23
+
+RES m,D,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:082H 27:m.3.0
+ T:23
+
+RES m,E,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:083H 27:m.3.0
+ T:23
+
+RES m,H,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:084H 27:m.3.0
+ T:23
+
+RES m,L,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:085H 27:m.3.0
+ T:23
+
+RES m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:086H 27:m.3.0
+ T:23
+
+RES m,A,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:087H 27:m.3.0
+ T:23
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SET m,B,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C0H 27:m.3.0
+ T:23
+
+SET m,C,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C1H 27:m.3.0
+ T:23
+
+SET m,D,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C2H 27:m.3.0
+ T:23
+
+SET m,E,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C3H 27:m.3.0
+ T:23
+
+SET m,H,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C4H 27:m.3.0
+ T:23
+
+SET m,L,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C5H 27:m.3.0
+ T:23
+
+SET m,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C6H 27:m.3.0
+ T:23
+
+SET m,A,(IX)
+>10H:m
+ 00:0CBDDH 16:00 24:0C7H 27:m.3.0
+ T:23
+
+
+
+SET m,B,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C0H 27:m.3.0
+ T:23
+
+SET m,C,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C1H 27:m.3.0
+ T:23
+
+SET m,D,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C2H 27:m.3.0
+ T:23
+
+SET m,E,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C3H 27:m.3.0
+ T:23
+
+SET m,H,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C4H 27:m.3.0
+ T:23
+
+SET m,L,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C5H 27:m.3.0
+ T:23
+
+SET m,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C6H 27:m.3.0
+ T:23
+
+SET m,A,(IY)
+>10H:m
+ 00:0CBFDH 16:00 24:0C7H 27:m.3.0
+ T:23
+
+INC HX
+ 00:024DDH
+ T:8
+
+DEC HX
+ 00:025DDH
+ T:8
+
+LD HX,n
+ 00:026DDH 16:n
+ T:11
+
+INC LX
+ 00:02CDDH
+ T:8
+
+DEC LX
+ 00:02DDDH
+ T:8
+
+LD LX,n
+ 00:02EDDH 16:n
+ T:11
+
+LD B,HX
+ 00:044DDH
+ T:8
+
+LD B,LX
+ 00:045DDH
+ T:8
+
+LD C,HX
+ 00:04CDDH
+ T:8
+
+LD C,LX
+ 00:04DDDH
+ T:8
+
+LD D,HX
+ 00:054DDH
+ T:8
+
+LD D,LX
+ 00:055DDH
+ T:8
+
+LD E,HX
+ 00:05CDDH
+ T:8
+
+LD E,LX
+ 00:05DDDH
+ T:8
+
+LD HX,B
+ 00:060DDH
+ T:8
+
+LD HX,C
+ 00:061DDH
+ T:8
+
+LD HX,D
+ 00:062DDH
+ T:8
+
+LD HX,E
+ 00:063DDH
+ T:8
+
+LD HX,HX
+ 00:064DDH
+ T:8
+
+LD HX,LX
+ 00:065DDH
+ T:8
+
+LD HX,A
+ 00:067DDH
+ T:8
+
+LD LX,B
+ 00:068DDH
+ T:8
+
+LD LX,C
+ 00:069DDH
+ T:8
+
+LD LX,D
+ 00:06ADDH
+ T:8
+
+LD LX,E
+ 00:06BDDH
+ T:8
+
+LD LX,HX
+ 00:06CDDH
+ T:8
+
+LD LX,LX
+ 00:06DDDH
+ T:8
+
+LD LX,A
+ 00:06FDDH
+ T:8
+
+LD A,HX
+ 00:07CDDH
+ T:8
+
+LD A,LX
+ 00:07DDDH
+ T:8
+
+ADD A,HX
+ 00:084DDH
+ T:8
+
+ADD A,LX
+ 00:085DDH
+ T:8
+
+ADC A,HX
+ 00:08CDDH
+ T:8
+
+ADC A,LX
+ 00:08DDDH
+ T:8
+
+SUB HX
+ 00:094DDH
+ T:8
+
+SUB LX
+ 00:095DDH
+ T:8
+
+SBC A,HX
+ 00:09CDDH
+ T:8
+
+SBC A,LX
+ 00:09DDDH
+ T:8
+
+AND HX
+ 00:0A4DDH
+ T:8
+
+AND LX
+ 00:0A5DDH
+ T:8
+
+XOR HX
+ 00:0ACDDH
+ T:8
+
+XOR LX
+ 00:0ADDDH
+ T:8
+
+OR HX
+ 00:0B4DDH
+ T:8
+
+OR LX
+ 00:0B5DDH
+ T:8
+
+CP HX
+ 00:0BCDDH
+ T:8
+
+CP LX
+ 00:0BDDDH
+ T:8
+
+INC HY
+ 00:024FDH
+ T:8
+
+DEC HY
+ 00:025FDH
+ T:8
+
+LD HY,n
+ 00:026FDH 16:n
+ T:11
+
+INC LY
+ 00:02CFDH
+ T:8
+
+DEC LY
+ 00:02DFDH
+ T:8
+
+LD LY,n
+ 00:02EFDH 16:n
+ T:11
+
+LD B,HY
+ 00:044FDH
+ T:8
+
+LD B,LY
+ 00:045FDH
+ T:8
+
+LD C,HY
+ 00:04CFDH
+ T:8
+
+LD C,LY
+ 00:04DFDH
+ T:8
+
+LD D,HY
+ 00:054FDH
+ T:8
+
+LD D,LY
+ 00:055FDH
+ T:8
+
+LD E,HY
+ 00:05CFDH
+ T:8
+
+LD E,LY
+ 00:05DFDH
+ T:8
+
+LD HY,B
+ 00:060FDH
+ T:8
+
+LD HY,C
+ 00:061FDH
+ T:8
+
+LD HY,D
+ 00:062FDH
+ T:8
+
+LD HY,E
+ 00:063FDH
+ T:8
+
+LD HY,HY
+ 00:064FDH
+ T:8
+
+LD HY,LY
+ 00:065FDH
+ T:8
+
+LD HY,A
+ 00:067FDH
+ T:8
+
+LD LY,B
+ 00:068FDH
+ T:8
+
+LD LY,C
+ 00:069FDH
+ T:8
+
+LD LY,D
+ 00:06AFDH
+ T:8
+
+LD LY,E
+ 00:06BFDH
+ T:8
+
+LD LY,HY
+ 00:06CFDH
+ T:8
+
+LD LY,LY
+ 00:06DFDH
+ T:8
+
+LD LY,A
+ 00:06FFDH
+ T:8
+
+LD A,HY
+ 00:07CFDH
+ T:8
+
+LD A,LY
+ 00:07DFDH
+ T:8
+
+ADD A,HY
+ 00:084FDH
+ T:8
+
+ADD A,LY
+ 00:085FDH
+ T:8
+
+ADC A,HY
+ 00:08CFDH
+ T:8
+
+ADC A,LY
+ 00:08DFDH
+ T:8
+
+SUB HY
+ 00:094FDH
+ T:8
+
+SUB LY
+ 00:095FDH
+ T:8
+
+SBC A,HY
+ 00:09CFDH
+ T:8
+
+SBC A,LY
+ 00:09DFDH
+ T:8
+
+AND HY
+ 00:0A4FDH
+ T:8
+
+AND LY
+ 00:0A5FDH
+ T:8
+
+XOR HY
+ 00:0ACFDH
+ T:8
+
+XOR LY
+ 00:0ADFDH
+ T:8
+
+OR HY
+ 00:0B4FDH
+ T:8
+
+OR LY
+ 00:0B5FDH
+ T:8
+
+CP HY
+ 00:0BCFDH
+ T:8
+
+CP LY
+ 00:0BDFDH
+ T:8
+
